@@ -1,0 +1,31 @@
+{
+    "name": "@wix/react-velo",
+    "version": "1.0.0",
+    "description": "",
+    "main": "./dist/render.js",
+    "scripts": {
+      "build": "tsc",
+      "esbuild": "esbuild render.tsx --bundle --minify --target=es2020 --platform=browser --external:react --external:React --outfile=my-app.js && sed -i '' 's/nr(\"react\")/React/g' my-app.js",
+      "test": "true"
+    },
+    "author": "Yury Michurin <yurym@wix.com>",
+    "license": "ISC",
+    "dependencies": {
+      "@types/node": "^16.11.10",
+      "esbuild": "^0.14.1",
+      "react": "^17.0.2",
+      "react-reconciler": "^0.26.2",
+      "typescript": "^4.5.2"
+    },
+    "devDependencies": {
+      "@types/react": "^17.0.37",
+      "@types/react-reconciler": "^0.26.4"
+    },
+    "wix": {
+      "artifact": {
+        "groupId": "com.wixpress",
+        "artifactId": "@wix/react-velo"
+      }
+    }
+  }
+  
