@@ -9,7 +9,7 @@
       "test": "true"
     },
     "author": "Yury Michurin <yurym@wix.com>",
-    "license": "ISC",
+    "license": "MIT",
     "dependencies": {
       "@types/node": "^16.11.10",
       "esbuild": "^0.14.1",
