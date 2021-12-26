@@ -45,6 +45,21 @@ function installEventHandlers(instanceForEventHandlers: any) {
   });
 }
 
+interface ReactVeloReconcilerInstance {
+  type: string;
+  props: Record<string, unknown>;
+  rootContainer: any;
+  hostContext: Record<string, never>;
+  children: ReactVeloReconcilerInstance[];
+  instanceId: string;
+  relative$w: any;
+  parent: ReactVeloReconcilerInstance | null;
+}
+
+interface RepeaterDataItem {
+  _id: ReactVeloReconcilerInstance['instanceId'];
+}
+
 let instanceId = 0;
 const reconciler = reactReconciler<
   // type
@@ -54,7 +69,7 @@ const reconciler = reactReconciler<
   // root container
   any,
   // view instance
-  any,
+  ReactVeloReconcilerInstance,
   // text instance
   any,
   // suspense instance
@@ -81,8 +96,8 @@ const reconciler = reactReconciler<
   cancelTimeout: clearTimeout,
   noTimeout: false,
   // @see https://github.com/facebook/react/blob/master/packages/react-dom/src/client/ReactDOMHostConfig.js#L408
-  queueMicrotask: (callback) =>
-    Promise.resolve(null).then(callback).catch(handleErrorInNextTick),
+  // queueMicrotask: (callback: any): any =>
+  //   Promise.resolve(null).then(callback).catch(handleErrorInNextTick),
 
   isPrimaryRenderer: true,
   supportsMutation: true,
@@ -90,7 +105,7 @@ const reconciler = reactReconciler<
   supportsPersistence: false,
 
   // Context
-  getRootHostContext() {
+  getRootHostContext(rootContainer: any) : any {
     log(`getRootHostContext()`);
     return rootHostContext;
   },
@@ -98,7 +113,7 @@ const reconciler = reactReconciler<
     parentHostContext: Record<string, never>,
     type: any,
     rootContainer: any,
-  ) {
+  ) : any {
     log(`getChildHostContext()`, parentHostContext, type, rootContainer);
     if (type === 'repeater') {
       return {
@@ -125,12 +140,12 @@ const reconciler = reactReconciler<
       root,
     };
   },
+
   createInstance(
     type,
     allProps,
     rootContainer,
     hostContext,
-    internalInstanceHandle,
   ) {
     if (typeof rootContainer.$w !== 'function') {
       console.log(`Warning: rootContainer.$w is not defined`);
@@ -144,15 +159,7 @@ const reconciler = reactReconciler<
         hostContext,
       )}, internalInstanceHandle: ... )`,
     );
-    const instance: {
-      type: string;
-      props: Record<string, unknown>;
-      rootContainer: any;
-      hostContext: Record<string, never>;
-      children: any[];
-      instanceId: string;
-      relative$w: any;
-    } = {
+    const instance: ReactVeloReconcilerInstance = {
       type,
       props: {
         ...allProps,
@@ -162,6 +169,7 @@ const reconciler = reactReconciler<
       children: [],
       instanceId: instanceId++ + '',
       relative$w: rootContainer.$w,
+      parent: null,
     };
 
     instancesMap.set(instance.instanceId, instance);
@@ -189,7 +197,7 @@ const reconciler = reactReconciler<
             )}`,
           );
 
-          const setRelative$wOnChildren = (child) => {
+          const setRelative$wOnChildren = (child: ReactVeloReconcilerInstance) => {
             if (Array.isArray(child.children)) {
               child.children.forEach(setRelative$wOnChildren);
             }
@@ -208,7 +216,7 @@ const reconciler = reactReconciler<
           instancesMap.get(props._id).relative$w = $item;
           instancesMap.get(props._id).children.forEach(setRelative$wOnChildren);
         });
-        // @ts-expect-error
+
         nativeEl.data = [];
       } else {
         log(`not repeater`);
@@ -238,28 +246,24 @@ const reconciler = reactReconciler<
     log(`commitTextUpdate: ${text}, ${_oldText} ${newText}`);
     // text.updateText(newText);
   },
-  prepareUpdate(_instance, _type, oldProps, newProps) {
-    // log(
-    //   `prepareUpdate: ${_instance}, ${_type} ${safeJsonStringify(
-    //     oldProps,
-    //   )}, ${safeJsonStringify(newProps)}`,
-    // );
-
+  prepareUpdate(_instance: ReactVeloReconcilerInstance, _type, oldProps, newProps) {
     log(`preapreUpdate: ${_instance.instanceId}`);
     if (_instance) {
       const changedKeys = Object.keys(newProps).filter(
         (key) => oldProps[key] !== newProps[key],
       );
       if (_instance.props.style) {
-        if (!newProps.style) {
-          changedKeys.push('style');
-        } else {
+        if (newProps.style) {
+          // @ts-expect-error
           const changedStyleKeys = Object.keys(_instance.props.style).filter(
+            // @ts-expect-error
             (key: string) => newProps.style[key] !== _instance.props.style[key],
           );
           if (changedStyleKeys.length) {
             changedKeys.push('style');
           }
+        } else {
+          changedKeys.push('style');
         }
       }
 
@@ -270,9 +274,11 @@ const reconciler = reactReconciler<
       const changedProps = changedKeys.reduce((acc, key) => {
         if (key === 'style') {
           acc[key] = {
+            // @ts-expect-error
             ...Object.keys(_instance.props[key] || {})
               .map((styleKey) => ({ [styleKey]: 'rgb(255, 255, 255)' }))
               .reduce((acc, style) => ({ ...acc, ...style }), {}), // This is a hack to make style reset work
+              // @ts-expect-error
             ...(newProps[key] || {}),
           };
         } else {
@@ -366,7 +372,7 @@ const reconciler = reactReconciler<
     // remoteRoot.removeChild(child);
   },
   clearContainer(container) {
-    container.children.forEach((child) => {
+    container.children.forEach((child: ReactVeloReconcilerInstance) => {
       child.parent = null;
     });
     container.children = [];
@@ -445,7 +451,7 @@ const reconciler = reactReconciler<
       const nativeEl = parent.relative$w(`#${parent.props.id}`);
       if (nativeEl) {
         nativeEl.data = nativeEl.data.splice(
-          nativeEl.data.findIndex((c) => c._id === beforeChild.instanceId),
+          nativeEl.data.findIndex((c: RepeaterDataItem) => c._id === beforeChild.instanceId),
           0,
           { ...newChild.props, _id: newChild.instanceId },
         );
@@ -464,7 +470,7 @@ const reconciler = reactReconciler<
       const nativeEl = parent.relative$w(`#${parent.props.id}`);
       if (nativeEl) {
         nativeEl.data = [
-          ...nativeEl.data.filter((item) => item._id !== child.instanceId),
+          ...nativeEl.data.filter((item: RepeaterDataItem) => item._id !== child.instanceId),
         ];
       }
     }
