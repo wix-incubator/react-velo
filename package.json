@@ -1,15 +1,14 @@
-
 {
     "name": "react-velo-mono-repo",
     "repository": {
         "type": "git",
         "url": "git@github.com:wix-private/react-velo.git"
-      },
-      "workspaces": {
+    },
+    "workspaces": {
         "packages": [
-          "packages/*"
+            "packages/*"
         ]
-      },
-      "private": true,
-      "license": "MIT"
+    },
+    "private": true,
+    "license": "MIT"
 }
