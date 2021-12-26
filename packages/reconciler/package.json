@@ -30,6 +30,7 @@
     "publishConfig": {
         "registry": "https://registry.npmjs.org/",
         "logLevel": "verbose",
-        "versionBumpStrategy": "patch"
+        "versionBumpStrategy": "patch",
+        "access": "public"
     }
 }
