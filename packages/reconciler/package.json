@@ -24,7 +24,7 @@
     "wix": {
         "artifact": {
             "groupId": "com.wixpress",
-            "artifactId": "@wix/react-velo"
+            "artifactId": "react-velo"
         }
     },
     "publishConfig": {
