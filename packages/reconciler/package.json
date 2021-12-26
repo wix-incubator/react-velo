@@ -16,20 +16,20 @@
     },
     "devDependencies": {
         "@types/node": "^16.11.10",
-        "esbuild": "^0.14.1",
-        "typescript": "^4.5.2",
         "@types/react": "^17.0.37",
-        "@types/react-reconciler": "^0.26.4"
+        "@types/react-reconciler": "^0.26.4",
+        "esbuild": "^0.14.1",
+        "typescript": "^4.5.2"
     },
     "wix": {
-      "artifact": {
-        "groupId": "com.wixpress",
-        "artifactId": "@wix/react-velo"
-      }
+        "artifact": {
+            "groupId": "com.wixpress",
+            "artifactId": "@wix/react-velo"
+        }
     },
     "publishConfig": {
-      "registry": "https://registry.npmjs.org/",
-      "logLevel": "verbose",
-      "versionBumpStrategy": "patch"
+        "registry": "https://registry.npmjs.org/",
+        "logLevel": "verbose",
+        "versionBumpStrategy": "patch"
     }
 }
