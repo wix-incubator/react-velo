@@ -2,7 +2,6 @@ import reactReconciler from 'react-reconciler';
 import { safeJsonStringify, applyPropsOnObjectExcept } from './utils';
 
 const EVENT_HANDLER_NAMES = ['onClick', 'onKeyPress', 'onChange', 'onDblClick'];
-const instancesMap = new Map<string, any>();
 
 const rootHostContext = {
   type: 'root-host-context',
@@ -60,35 +59,35 @@ interface RepeaterDataItem {
   _id: ReactVeloReconcilerInstance['instanceId'];
 }
 
-let instanceId = 0;
-const reconciler = reactReconciler<
-  // type
-  any,
-  // props
-  Record<string, unknown>,
-  // root container
-  any,
-  // view instance
-  ReactVeloReconcilerInstance,
-  // text instance
-  any,
-  // suspense instance
-  never,
-  // hydratable instance
-  unknown,
-  // public instance
-  unknown,
-  // host context
-  Record<string, never>,
-  // update payload
-  Record<string, unknown>,
-  // child set
-  unknown,
-  // timeout handle
-  unknown,
-  // notimeout
-  unknown
->({
+type ReconcilerDefinition = reactReconciler.HostConfig<
+// type
+any,
+// props
+Record<string, unknown>,
+// root container
+any,
+// view instance
+ReactVeloReconcilerInstance,
+// text instance
+any,
+// suspense instance
+never,
+// hydratable instance
+unknown,
+// public instance
+unknown,
+// host context
+Record<string, never>,
+// update payload
+Record<string, unknown>,
+// child set
+unknown,
+// timeout handle
+unknown,
+// notimeout
+unknown>;
+
+export const reconcilerDefinition: ReconcilerDefinition = {
   now: Date.now,
 
   // Timeout
@@ -159,6 +158,7 @@ const reconciler = reactReconciler<
         hostContext,
       )}, internalInstanceHandle: ... )`,
     );
+
     const instance: ReactVeloReconcilerInstance = {
       type,
       props: {
@@ -167,12 +167,12 @@ const reconciler = reactReconciler<
       rootContainer,
       hostContext,
       children: [],
-      instanceId: instanceId++ + '',
+      instanceId: rootContainer.lastInstanceId++ + '',
       relative$w: rootContainer.$w,
       parent: null,
     };
 
-    instancesMap.set(instance.instanceId, instance);
+    rootContainer.instancesMap.set(instance.instanceId, instance);
     log(
       `createInstance() instanceId: ${instance.instanceId} for propsId: ${instance.props.id}`,
     );
@@ -193,7 +193,7 @@ const reconciler = reactReconciler<
         nativeEl.onItemReady(($item, props) => {
           log(
             `Repeater item ready: ${props._id} children: ${safeJsonStringify(
-              instancesMap.get(props._id).children,
+              rootContainer.instancesMap.get(props._id).children,
             )}`,
           );
 
@@ -213,8 +213,9 @@ const reconciler = reactReconciler<
 
             log(`Setting relative$w on ${child.props.id} for ${props._id}`);
           };
-          instancesMap.get(props._id).relative$w = $item;
-          instancesMap.get(props._id).children.forEach(setRelative$wOnChildren);
+
+          rootContainer.instancesMap.get(props._id).relative$w = $item;
+          rootContainer.instancesMap.get(props._id).children.forEach(setRelative$wOnChildren);
         });
 
         nativeEl.data = [];
@@ -501,7 +502,9 @@ const reconciler = reactReconciler<
   resetAfterCommit() {},
   commitMount() {},
   preparePortalMount() {},
-});
+};
+
+const reconciler = reactReconciler(reconcilerDefinition);
 
 function handleErrorInNextTick(error: Error) {
   console.log(`Error occured: ${error.message}`, error);

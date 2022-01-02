@@ -6,7 +6,7 @@
     "scripts": {
         "build": "tsc",
         "esbuild": "esbuild render.tsx --bundle --minify --target=es2020 --platform=browser --external:react --external:React --outfile=my-app.js && sed -i '' 's/nr(\"react\")/React/g' my-app.js",
-        "test": "true"
+        "test": "jest"
     },
     "author": "Yury Michurin <yurym@wix.com>",
     "license": "MIT",
@@ -15,10 +15,18 @@
         "react-reconciler": "^0.26.2"
     },
     "devDependencies": {
+        "@babel/core": "^7.16.5",
+        "@babel/preset-env": "^7.16.5",
+        "@babel/preset-react": "^7.16.5",
+        "@babel/preset-typescript": "^7.16.5",
+        "@testing-library/react": "^12.1.2",
+        "@types/jest": "^27.0.3",
         "@types/node": "^16.11.10",
         "@types/react": "^17.0.37",
         "@types/react-reconciler": "^0.26.4",
+        "babel-jest": "^27.4.5",
         "esbuild": "^0.14.1",
+        "jest": "^27.4.5",
         "typescript": "^4.5.2"
     },
     "wix": {

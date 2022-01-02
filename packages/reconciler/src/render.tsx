@@ -9,7 +9,7 @@ export function render(
   // @see https://github.com/facebook/react/blob/993ca533b42756811731f6b7791ae06a35ee6b4d/packages/react-reconciler/src/ReactRootTags.js
   // I think we are a legacy root?
   const container = reconciler.createContainer(
-    { id: '~root~', type: 'root-container', $w, children: [] },
+    { id: '~root~', type: 'root-container', $w, lastInstanceId: 0, instancesMap: new Map<string, any>(), children: [] },
     0,
     false,
     null,
