@@ -5,7 +5,8 @@
     "main": "./dist/render.js",
     "scripts": {
         "build": "tsc",
-        "esbuild": "esbuild render.tsx --bundle --minify --target=es2020 --platform=browser --external:react --external:React --outfile=my-app.js && sed -i '' 's/nr(\"react\")/React/g' my-app.js",
+        "esbuild": "esbuild src/render.tsx --bundle --minify --target=es2020 --platform=browser --global-name=reactVelo --external:react --external:React --outfile=./dist/react-velo-bundle.js && sed -i '' 's/Lu(\"react\")/React/g' ./dist/react-velo-bundle.js",
+        "serve": "http-server dist -p 9080",
         "test": "jest"
     },
     "author": "Yury Michurin <yurym@wix.com>",
@@ -26,6 +27,7 @@
         "@types/react-reconciler": "^0.26.4",
         "babel-jest": "^27.4.5",
         "esbuild": "^0.14.1",
+        "http-server": "^14.0.0",
         "jest": "^27.4.5",
         "typescript": "^4.5.2"
     },

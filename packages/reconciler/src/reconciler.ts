@@ -7,8 +7,12 @@ const rootHostContext = {
   type: 'root-host-context',
 };
 
+const getGlobal = () => Function('return this')();
+
 function log(...args: any[]) {
-  // console.log(...args);
+  if (getGlobal().REACT_VELO_DEBUG) {
+    console.log(...args);
+  }
 }
 
 function installEventHandlers(instanceForEventHandlers: any) {
@@ -42,6 +46,19 @@ function installEventHandlers(instanceForEventHandlers: any) {
       }
     });
   });
+}
+
+function toggleVisibility(instance: ReactVeloReconcilerInstance, action: 'show' | 'hide') {
+  if (instance) {
+    const nativeEl = instance.relative$w(`#${instance.props.id}`);
+    if (nativeEl) {
+      if (typeof nativeEl[action] === 'function') {
+        nativeEl[action]();
+      } else {
+        console.log(`Warning: ${action}() is not defined for ${instance.props.id}`);
+      }
+    }
+}
 }
 
 interface ReactVeloReconcilerInstance {
@@ -347,6 +364,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
         container,
       )}, ${safeJsonStringify(child)})`,
     );
+    toggleVisibility(child, 'show');
     // child.parent = container;
     // container.children.push(child);
   },
@@ -358,26 +376,16 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     log(
       `removeChildFromContainer(${safeJsonStringify(
         container,
-      )}, ${safeJsonStringify(child)})`,
+      )}, { props.id: #${child.props.id}, instanceId: ${child.instanceId} })`,
     );
-    // if (child) {
-    //     const nativeEl = child.relative$w(`#${child.props.id}`);
-    //     if (nativeEl) {
-    //       if (typeof nativeEl.hide === 'function') {
-    //         nativeEl.hide();
-    //       } else {
-    //         console.log(`Warning: hide() is not defined for ${child.props.id}`);
-    //       }
-    //     }
-    // }
-    // remoteRoot.removeChild(child);
+    toggleVisibility(child, 'hide');
   },
   clearContainer(container) {
     container.children.forEach((child: ReactVeloReconcilerInstance) => {
       child.parent = null;
     });
     container.children = [];
-    console.log(`clearContainer(${container})`);
+    log(`clearContainer(${container})`);
   },
 
   // Update children
@@ -400,16 +408,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       }
     }
 
-    if (child) {
-      const nativeEl = child.relative$w(`#${child.props.id}`);
-      if (nativeEl) {
-        if (typeof nativeEl.show === 'function') {
-          nativeEl.show();
-        } else {
-          console.log(`Warning: show() is not defined for ${child.props.id}`);
-        }
-      }
-    }
+    toggleVisibility(child, 'show');
   },
   appendChild(parent, child) {
     log(
@@ -476,16 +475,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       }
     }
 
-    if (child) {
-      const nativeEl = child.relative$w(`#${child.props.id}`);
-      if (nativeEl) {
-        if (typeof nativeEl.hide === 'function') {
-          nativeEl.hide();
-        } else {
-          console.log(`Warning: hide() is not defined for ${child.props.id}`);
-        }
-      }
-    }
+    toggleVisibility(child, 'hide');
   },
 
   // Unknown

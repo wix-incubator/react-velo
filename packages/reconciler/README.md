@@ -105,3 +105,33 @@ export default function App() {
     </>;
 }
 ```
+
+
+# Development
+`yarn run esbuild`
+`yarn serve`
+
+in velo:
+```es6
+import React, { useState } from 'react';
+self.React = React;
+importScripts('http://localhost:9080/react-velo-bundle.js');
+
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <>
+		<label id="counter" label={`${count}`}/>
+    	<button id="increment" onClick={() => setCount(count + 1)}/>
+    	<button id="decrement" onClick={() => setCount(count - 1)}/>
+		{count % 10 === 0 ? <div id="box"/> : null}
+    </>
+  );
+}
+
+$w.onReady(function () {
+  const global = Function('return this')();
+  console.log('this is global?', global === self);
+	reactVelo.render(App, $w);
+});
+```
