@@ -138,13 +138,6 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       };
     }
 
-    if (parentHostContext.type === 'repeater') {
-      return {
-        type: 'repeater-item',
-        parent: parentHostContext,
-      };
-    }
-
     return parentHostContext;
   },
 
@@ -201,11 +194,13 @@ export const reconcilerDefinition: ReconcilerDefinition = {
 
     if (nativeEl) {
       const unsettablePropNames = ['id', ...EVENT_HANDLER_NAMES];
-      if (hostContext.type !== 'repeater-item') {
+      if (hostContext.type !== 'repeater') {
         applyPropsOnObjectExcept(nativeEl, instance.props, unsettablePropNames);
       }
 
       if (type === 'repeater') {
+        log(`#${instance.props.id} (${instance.instanceId}) is repeater type`);
+  
         // @ts-expect-error
         nativeEl.onItemReady(($item, props) => {
           log(
@@ -214,37 +209,51 @@ export const reconcilerDefinition: ReconcilerDefinition = {
             )}`,
           );
 
+          const setPropsAndEventHandlers = (instance: ReactVeloReconcilerInstance) => {
+            if (!instance.props.id) {
+              log(`Unable to set props and event handlers on instanceId: ${instance.instanceId}, no props.id.`);
+              return;
+            }
+
+            const childNativeEl = instance.relative$w('#' + instance.props.id);
+
+            if (childNativeEl) {
+              log(`Setting props and event handlers on ${instance.props.id}`);
+              applyPropsOnObjectExcept(
+                childNativeEl,
+                instance.props,
+                unsettablePropNames,
+              );
+              installEventHandlers(instance);
+            } else {
+              log(`Unable to set props and event handlers on ${instance.props.id} for ${props._id}, native element not found`);
+            }
+          };
+
           const setRelative$wOnChildren = (child: ReactVeloReconcilerInstance) => {
             if (Array.isArray(child.children)) {
               child.children.forEach(setRelative$wOnChildren);
             }
-            child.relative$w = $item;
-            const childNativeEl = child.relative$w('#' + child.props.id);
-
-            applyPropsOnObjectExcept(
-              childNativeEl,
-              child.props,
-              unsettablePropNames,
-            );
-            installEventHandlers(child);
-
+            
             log(`Setting relative$w on ${child.props.id} for ${props._id}`);
+            child.relative$w = $item;
+            setPropsAndEventHandlers(child);
           };
 
-          rootContainer.instancesMap.get(props._id).relative$w = $item;
-          rootContainer.instancesMap.get(props._id).children.forEach(setRelative$wOnChildren);
+          const repeaterItemInstance = rootContainer.instancesMap.get(props._id);
+          repeaterItemInstance.relative$w = $item;
+          setPropsAndEventHandlers(repeaterItemInstance);
+          repeaterItemInstance.children.forEach(setRelative$wOnChildren);
         });
 
         nativeEl.data = [];
-      } else {
-        log(`not repeater`);
       }
 
-      if (hostContext.type !== 'repeater-item') {
-        installEventHandlers(instance);
+      if (hostContext.type !== 'repeater' || type !== 'repeater') {
+          installEventHandlers(instance);
       } else {
         log(
-          `Repeater item: instanceId: ${instance.instanceId} propsId: ${instance.props.id}`,
+          `Skipping event handlers install. ${type === 'repeater' ? 'Repeater': 'Repeater item'}: instanceId: ${instance.instanceId} propsId: ${instance.props.id}`,
         );
       }
     } else {
@@ -360,9 +369,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   // Update root
   appendChildToContainer(container, child) {
     log(
-      `appendChildToContainer(${safeJsonStringify(
-        container,
-      )}, ${safeJsonStringify(child)})`,
+      `appendChildToContainer(parent: #${container.id}, child: #${child.props.id} (${child.instanceId}))`,
     );
     toggleVisibility(child, 'show');
     // child.parent = container;
@@ -385,20 +392,19 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       child.parent = null;
     });
     container.children = [];
-    log(`clearContainer(${container})`);
+    log(`clearContainer(${container.id})`);
   },
 
   // Update children
   appendInitialChild(parent, child) {
     log(
-      `appendInitialChild(parent: ${safeJsonStringify(
-        parent,
-      )}, child: ${safeJsonStringify(child)})`,
+      `appendInitialChild(parent: #${parent.props.id} (${parent.instanceId}), child: #${child.props.id} (${child.instanceId}))`,
     );
     parent.children.push(child);
     child.parent = parent;
 
     if (parent.type === 'repeater') {
+      log(`appendInitialChild() done for ${child.props.id} on repeater ${parent.props.id}`);
       const nativeEl = parent.relative$w(`#${parent.props.id}`);
       if (nativeEl) {
         nativeEl.data = [
@@ -412,12 +418,11 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   },
   appendChild(parent, child) {
     log(
-      `appendChild(parent: ${safeJsonStringify(
-        parent,
-      )}, child: ${safeJsonStringify(child)})`,
+      `appendChild(parent: #${parent.props.id} (${parent.instanceId}), child: #${child.props.id} (${child.instanceId}))`,
     );
     parent.children.push(child);
     if (parent.type === 'repeater') {
+      log(`appendChild() done for ${child.props.id} on repeater ${parent.props.id}`);
       const nativeEl = parent.relative$w(`#${parent.props.id}`);
       if (nativeEl) {
         nativeEl.data = [
@@ -437,7 +442,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     newChild.relative$w = parent.relative$w;
 
     const newChildNativeEl = newChild.relative$w(`#${newChild.props.id}`);
-    if (newChild.hostContext.type === 'repeater-item') {
+    if (newChild.hostContext.type === 'repeater') {
       installEventHandlers(newChild);
       applyPropsOnObjectExcept(newChildNativeEl, newChild.props, [
         'id',
