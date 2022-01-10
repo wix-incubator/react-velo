@@ -439,6 +439,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       }
     }
     child.parent = parent;
+    toggleVisibility(child, 'show');
   },
   insertBefore(parent, newChild, beforeChild) {
     log(`insertBefore(${parent}, ${newChild}, ${beforeChild})`);
