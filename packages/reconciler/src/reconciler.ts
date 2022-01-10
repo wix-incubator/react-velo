@@ -15,7 +15,7 @@ function log(...args: any[]) {
   }
 }
 
-function installEventHandlers(instanceForEventHandlers: any) {
+function installEventHandlers(instanceForEventHandlers: ReactVeloReconcilerInstance) {
   const nativeElToInstallOn = instanceForEventHandlers.relative$w(
     `#${instanceForEventHandlers.props.id}`,
   );
@@ -29,7 +29,7 @@ function installEventHandlers(instanceForEventHandlers: any) {
     }
 
     log(
-      `Installing instanceId: ${instanceForEventHandlers.instanceId} propId: ${instanceForEventHandlers.props.id} eventName: ${eventName}`,
+      `Installing event handler on instanceId: ${instanceForEventHandlers.instanceId} propId: ${instanceForEventHandlers.props.id} eventName: ${eventName}`,
     );
     eventHandlerSetter.call(nativeElToInstallOn, function (...args: any[]) {
       // there's no native way to remove event handler from wix element
@@ -41,7 +41,8 @@ function installEventHandlers(instanceForEventHandlers: any) {
       }
 
       if (typeof instanceForEventHandlers.props[eventName] === 'function') {
-        log('Calling handler...');
+        log(`Calling ${eventName} handler on ${instanceForEventHandlers.instanceId}...`);
+        //@ts-expect-error
         return instanceForEventHandlers.props[eventName](...args);
       }
     });
@@ -70,6 +71,7 @@ interface ReactVeloReconcilerInstance {
   instanceId: string;
   relative$w: any;
   parent: ReactVeloReconcilerInstance | null;
+  ignoreEvents?: boolean;
 }
 
 interface RepeaterDataItem {
@@ -195,6 +197,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     if (nativeEl) {
       const unsettablePropNames = ['id', ...EVENT_HANDLER_NAMES];
       if (hostContext.type !== 'repeater') {
+        log(`Setting props ${safeJsonStringify(instance.props)} on nativeEl: ${instance.props.id}`);
         applyPropsOnObjectExcept(nativeEl, instance.props, unsettablePropNames);
       }
 
@@ -205,7 +208,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
         nativeEl.onItemReady(($item, props) => {
           log(
             `Repeater item ready: ${props._id} children: ${safeJsonStringify(
-              rootContainer.instancesMap.get(props._id).children,
+              rootContainer.instancesMap.get(props._id).children.map((instance: ReactVeloReconcilerInstance) => ({ instanceId: instance.instanceId, propsId: instance.props.id })),
             )}`,
           );
 
@@ -218,7 +221,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
             const childNativeEl = instance.relative$w('#' + instance.props.id);
 
             if (childNativeEl) {
-              log(`Setting props and event handlers on ${instance.props.id}`);
+              log(`Setting props ${safeJsonStringify(instance.props)} and event handlers on ${instance.props.id}`);
               applyPropsOnObjectExcept(
                 childNativeEl,
                 instance.props,
@@ -249,7 +252,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
         nativeEl.data = [];
       }
 
-      if (hostContext.type !== 'repeater' || type !== 'repeater') {
+      if (hostContext.type !== 'repeater' && type !== 'repeater') {
           installEventHandlers(instance);
       } else {
         log(
@@ -341,9 +344,11 @@ export const reconcilerDefinition: ReconcilerDefinition = {
         log(
           `commiting ${key} on ${instance.instanceId} hostContext is: ${instance.hostContext.type}`,
         );
+
+        // TODO: replace with applyPropsOnObjectExcept
         if (!EVENT_HANDLER_NAMES.includes(key)) {
           if (key === 'children' && typeof payload[key] === 'string') {
-            log(`set text of ${instance.props.id}: ${payload[key]}`);
+            log(`Should set text of ${instance.props.id}: ${payload[key]}, but we dont support that yet`);
           } else if (key !== 'children') {
             log(`set value of ${instance.props.id}: ${key} -> ${payload[key]}`);
             // nativeEl[key] = payload[key];
@@ -411,6 +416,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
           ...nativeEl.data,
           { ...child.props, _id: child.instanceId },
         ];
+        log(`appendInitialChild repeater #${parent.props.id} (${parent.instanceId}) data: ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
       }
     }
 
@@ -429,6 +435,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
           ...nativeEl.data,
           { ...child.props, _id: child.instanceId },
         ];
+        log(`appendChild repeater #${parent.props.id} (${parent.instanceId}) data: ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
       }
     }
     child.parent = parent;
@@ -460,23 +467,29 @@ export const reconcilerDefinition: ReconcilerDefinition = {
           0,
           { ...newChild.props, _id: newChild.instanceId },
         );
+
+        log(`insertBefore repeater #${parent.props.id} (${parent.instanceId}) data: ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
       }
     }
   },
   removeChild(parent, child) {
     log(
-      `removeChild(parent: ${safeJsonStringify(
-        parent,
-      )}, child: ${safeJsonStringify(child)})`,
+      `removeChild({ props.id: #${parent.props.id}, instanceId: ${parent.instanceId}, type: ${parent.type} }, { props.id: #${child.props.id}, instanceId: ${child.instanceId}, type: ${child.type} })`,
     );
+    
     // there's no native way to remove event handler from wix element, so must do the hack:
-    child.ignoreEvents = true;
+    const setIngoreEvents = (instance: ReactVeloReconcilerInstance) => {
+      instance.ignoreEvents = true;
+      instance.children.forEach(setIngoreEvents);
+    }
+    setIngoreEvents(child);
     if (parent.type === 'repeater') {
       const nativeEl = parent.relative$w(`#${parent.props.id}`);
       if (nativeEl) {
         nativeEl.data = [
           ...nativeEl.data.filter((item: RepeaterDataItem) => item._id !== child.instanceId),
         ];
+        log(`removeChild repeater #${parent.props.id} (${parent.instanceId}) data: ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
       }
     }
 
