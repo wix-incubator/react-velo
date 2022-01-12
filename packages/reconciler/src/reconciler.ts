@@ -377,12 +377,19 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       `appendChildToContainer(parent: #${container.id}, child: #${child.props.id} (${child.instanceId}))`,
     );
     toggleVisibility(child, 'show');
-    // child.parent = container;
-    // container.children.push(child);
+    //child.parent = container; dunno, parent is supposed to be ReactVeloReconcilerInstance
+    container.children.push(child);
   },
   insertInContainerBefore(container, child, beforeChild) {
-    log(`insertInContainerBefore(${container}, ${child}, ${beforeChild})`);
-    // remoteRoot.insertChildBefore(child, beforeChild);
+    log(
+      `insertInContainerBefore(container: #${container.id}, child: #${child.props.id} (${child.instanceId}), beforeChild: #${beforeChild.props.id} (${beforeChild.instanceId}))`,
+    );
+    const index = container.children.indexOf(beforeChild);
+    if (index > -1) {
+      container.children.splice(index, 0, child);
+      //child.parent = container; dunno, parent is supposed to be ReactVeloReconcilerInstance
+    }
+    toggleVisibility(child, 'show');
   },
   removeChildFromContainer(container, child) {
     log(
