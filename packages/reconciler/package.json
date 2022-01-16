@@ -5,7 +5,7 @@
     "main": "./dist/src/render.js",
     "scripts": {
         "build": "tsc",
-        "esbuild": "esbuild src/render.tsx --bundle --minify --target=es2020 --platform=browser --global-name=reactVelo --external:react --external:React --outfile=./dist/react-velo-bundle.js && sed -i '' 's/Lu(\"react\")/React/g' ./dist/react-velo-bundle.js",
+        "esbuild": "esbuild src/render.tsx --bundle --minify --target=es2020 --platform=browser --global-name=reactVelo --external:react --external:React --outfile=./dist/react-velo-bundle.js && node scripts/process-bundle.js",
         "serve": "http-server dist -p 9080",
         "test": "jest"
     },
