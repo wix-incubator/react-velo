@@ -7,7 +7,7 @@
         "build": "tsc",
         "esbuild": "esbuild src/render.tsx --bundle --minify --target=es2020 --platform=browser --global-name=reactVelo --external:react --external:React --outfile=./dist/react-velo-bundle.js && node scripts/process-bundle.js",
         "serve": "http-server dist -p 9080",
-        "test": "jest"
+        "test": "yarn esbuild && jest"
     },
     "author": "Yury Michurin <yurym@wix.com>",
     "license": "MIT",
@@ -26,9 +26,11 @@
         "@types/react": "^17.0.37",
         "@types/react-reconciler": "^0.26.4",
         "babel-jest": "^27.4.5",
+        "devtools-protocol": "^0.0.959523",
         "esbuild": "^0.14.1",
         "http-server": "^14.0.0",
         "jest": "^27.4.5",
+        "puppeteer": "^13.0.1",
         "typescript": "^4.5.2"
     },
     "wix": {

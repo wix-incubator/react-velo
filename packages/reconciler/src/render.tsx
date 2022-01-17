@@ -1,5 +1,6 @@
 import React, { createContext } from 'react';
 import reconciler from './reconciler';
+import { getGlobal } from './utils';
 
 export function render(
   Component: React.ComponentType<any>,
@@ -34,4 +35,7 @@ export function render(
     null,
     callback as any,
   );
+  
+  getGlobal().performance && getGlobal().performance.mark('react-velo rendered');
+  getGlobal().REACT_VELO_DEBUG && console.log('react-velo rendered');
 }

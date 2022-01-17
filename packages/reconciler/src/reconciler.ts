@@ -1,13 +1,11 @@
 import reactReconciler from 'react-reconciler';
-import { safeJsonStringify, applyPropsOnObjectExcept } from './utils';
+import { safeJsonStringify, applyPropsOnObjectExcept, getGlobal } from './utils';
 
 const EVENT_HANDLER_NAMES = ['onClick', 'onKeyPress', 'onChange', 'onDblClick'];
 
 const rootHostContext = {
   type: 'root-host-context',
 };
-
-const getGlobal = () => Function('return this')();
 
 function log(...args: any[]) {
   if (getGlobal().REACT_VELO_DEBUG) {
@@ -50,16 +48,22 @@ function installEventHandlers(instanceForEventHandlers: ReactVeloReconcilerInsta
 }
 
 function toggleVisibility(instance: ReactVeloReconcilerInstance, action: 'show' | 'hide') {
-  if (instance) {
-    const nativeEl = instance.relative$w(`#${instance.props.id}`);
-    if (nativeEl) {
-      if (typeof nativeEl[action] === 'function') {
-        nativeEl[action]();
-      } else {
-        console.log(`Warning: ${action}() is not defined for ${instance.props.id}`);
+  const innerToggleVisibility = (instance: ReactVeloReconcilerInstance, action: 'show' | 'hide') => {
+    if (instance) {
+      const nativeEl = instance.relative$w(`#${instance.props.id}`);
+      if (nativeEl) {
+        if (typeof nativeEl[action] === 'function') {
+          nativeEl[action]();
+        } else {
+          console.log(`Warning: ${action}() is not defined for ${instance.props.id}`);
+        }
       }
     }
-}
+
+    instance.children.map(child => innerToggleVisibility(child, action));
+  };
+
+  innerToggleVisibility(instance, action);
 }
 
 interface ReactVeloReconcilerInstance {

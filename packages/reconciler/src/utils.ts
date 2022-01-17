@@ -52,3 +52,4 @@ const getCircularReplacer = () => {
       });
   }
   
+  export const getGlobal = () => Function('return this')();

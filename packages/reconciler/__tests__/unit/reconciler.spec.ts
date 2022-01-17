@@ -1,4 +1,4 @@
-import { reconcilerDefinition } from '../src/reconciler';
+import { reconcilerDefinition } from '../../src/reconciler';
 
 describe('createInstance sanity', () => {
 
