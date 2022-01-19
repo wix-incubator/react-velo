@@ -1,0 +1,32 @@
+{
+    "name": "@wix/react-velo-statics",
+    "version": "1.0.0",
+    "private": true,
+    "author": {
+        "name": "Yury Michurin",
+        "email": "yurym@wix.com"
+    },
+    "scripts": {
+        "build": "esbuild index.js --bundle --minify --target=es2020 --platform=browser --global-name=reactVelo --external:react --external:React --outfile=./dist/react-velo-bundle.js && node scripts/process-bundle.js",
+        "serve": "http-server dist -p 9080",
+        "test": "yarn esbuild && jest"
+    },
+    "license": "MIT",
+    "devDependencies": {
+        "@wix/react-velo": "^1.0.1",
+        "esbuild": "^0.14.1",
+        "http-server": "^14.0.0",
+        "typescript": "^4.5.2"
+    },
+    "description": "react-velo as a bundle",
+    "main": "./dist/react-velo-bundle.js",
+    "wix": {
+        "artifact": {
+            "groupId": "com.wixpress",
+            "artifactId": "react-velo-statics",
+            "targets": {
+                "static": true
+            }
+        }
+    }
+}

@@ -1853,7 +1853,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@wix/react-velo@workspace:packages/reconciler":
+"@wix/react-velo-statics@workspace:packages/reconciler-statics":
+  version: 0.0.0-use.local
+  resolution: "@wix/react-velo-statics@workspace:packages/reconciler-statics"
+  dependencies:
+    "@wix/react-velo": ^1.0.1
+    esbuild: ^0.14.1
+    http-server: ^14.0.0
+    typescript: ^4.5.2
+  languageName: unknown
+  linkType: soft
+
+"@wix/react-velo@^1.0.1, @wix/react-velo@workspace:packages/reconciler":
   version: 0.0.0-use.local
   resolution: "@wix/react-velo@workspace:packages/reconciler"
   dependencies:
