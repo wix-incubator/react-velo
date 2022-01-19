@@ -39,7 +39,7 @@ function installEventHandlers(instanceForEventHandlers: ReactVeloReconcilerInsta
       }
 
       if (typeof instanceForEventHandlers.props[eventName] === 'function') {
-        log(`Calling ${eventName} handler on ${instanceForEventHandlers.instanceId}...`);
+        log(`Calling ${eventName} handler on #${instanceForEventHandlers.props.id} instanceId: ${instanceForEventHandlers.instanceId}...`);
         //@ts-expect-error
         return instanceForEventHandlers.props[eventName](...args);
       }
@@ -49,13 +49,13 @@ function installEventHandlers(instanceForEventHandlers: ReactVeloReconcilerInsta
 
 function toggleVisibility(instance: ReactVeloReconcilerInstance, action: 'show' | 'hide') {
   const innerToggleVisibility = (instance: ReactVeloReconcilerInstance, action: 'show' | 'hide') => {
-    if (instance) {
+    if (instance && instance.props.id) {
       const nativeEl = instance.relative$w(`#${instance.props.id}`);
       if (nativeEl) {
         if (typeof nativeEl[action] === 'function') {
           nativeEl[action]();
         } else {
-          console.log(`Warning: ${action}() is not defined for ${instance.props.id}`);
+          console.log(`Warning: ${action}() is not defined for #${instance.props.id} ${typeof instance.props.id}}`);
         }
       }
     }
@@ -64,6 +64,15 @@ function toggleVisibility(instance: ReactVeloReconcilerInstance, action: 'show' 
   };
 
   innerToggleVisibility(instance, action);
+}
+
+const setIgnoreEvents = (instance: ReactVeloReconcilerInstance) => {
+  // there's no native way to remove event handler from wix element, so must do the hack:
+  function setIgnoreEventsInner(child: ReactVeloReconcilerInstance) {
+    child.ignoreEvents = true;
+    child.children.map(setIgnoreEventsInner);
+  }
+  setIgnoreEventsInner(instance);
 }
 
 interface ReactVeloReconcilerInstance {
@@ -168,11 +177,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     log(
       `createInstance(type: ${type}, allProps: ${safeJsonStringify(
         allProps,
-      )}, rootContainer: ${safeJsonStringify(
-        rootContainer,
-      )}, hostContext: ${safeJsonStringify(
-        hostContext,
-      )}, internalInstanceHandle: ... )`,
+      )}`,
     );
 
     const instance: ReactVeloReconcilerInstance = {
@@ -378,7 +383,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   // Update root
   appendChildToContainer(container, child) {
     log(
-      `appendChildToContainer(parent: #${container.id}, child: #${child.props.id} (${child.instanceId}))`,
+      `appendChildToContainer(container: #${container.id}, child: #${child.props.id} (${child.instanceId}))`,
     );
     toggleVisibility(child, 'show');
     //child.parent = container; dunno, parent is supposed to be ReactVeloReconcilerInstance
@@ -397,10 +402,9 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   },
   removeChildFromContainer(container, child) {
     log(
-      `removeChildFromContainer(${safeJsonStringify(
-        container,
-      )}, { props.id: #${child.props.id}, instanceId: ${child.instanceId} })`,
+      `removeChildFromContainer(container: #${container.id}, child: #${child.props.id} (${child.instanceId}))`,
     );
+    setIgnoreEvents(child);
     toggleVisibility(child, 'hide');
   },
   clearContainer(container) {
@@ -468,7 +472,8 @@ export const reconcilerDefinition: ReconcilerDefinition = {
         ...EVENT_HANDLER_NAMES,
       ]);
     }
-    newChildNativeEl.show();
+    //newChildNativeEl.show();
+    toggleVisibility(newChild, 'show');
 
     // Should we even have this?
     if (parent.type === 'repeater') {
@@ -489,12 +494,8 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       `removeChild({ props.id: #${parent.props.id}, instanceId: ${parent.instanceId}, type: ${parent.type} }, { props.id: #${child.props.id}, instanceId: ${child.instanceId}, type: ${child.type} })`,
     );
     
-    // there's no native way to remove event handler from wix element, so must do the hack:
-    const setIngoreEvents = (instance: ReactVeloReconcilerInstance) => {
-      instance.ignoreEvents = true;
-      instance.children.forEach(setIngoreEvents);
-    }
-    setIngoreEvents(child);
+    setIgnoreEvents(child);
+
     if (parent.type === 'repeater') {
       const nativeEl = parent.relative$w(`#${parent.props.id}`);
       if (nativeEl) {
