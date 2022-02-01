@@ -5,8 +5,11 @@ const fs = require('fs').promises;
 const path = require('path');
 
 function getRequireFunctionName(source) {
-    const regex = /var ([a-zA-Z0-9]+)=\(o=>typeof require!="undefined"\?require:typeof Proxy!="undefined"\?new Proxy/;
+    const regex = /var ([a-zA-Z0-9]+)=\([a-z]=>typeof require!="undefined"\?require:typeof Proxy!="undefined"\?new Proxy/;
     const match = regex.exec(source);
+    if (!match || match.length < 2) {
+        throw new Error(`Could not find require function name in source.`);
+    }
     return match[1];
 }
 

@@ -1,7 +1,6 @@
 import reactReconciler from 'react-reconciler';
 import { safeJsonStringify, applyPropsOnObjectExcept, getGlobal } from './utils';
-
-const EVENT_HANDLER_NAMES = ['onClick', 'onKeyPress', 'onChange', 'onDblClick'];
+import { EVENT_HANDLER_NAMES, ReactVeloReconcilerInstance } from './reconciler-instance';
 
 const rootHostContext = {
   type: 'root-host-context',
@@ -11,80 +10,6 @@ function log(...args: any[]) {
   if (getGlobal().REACT_VELO_DEBUG) {
     console.log(...args);
   }
-}
-
-function installEventHandlers(instanceForEventHandlers: ReactVeloReconcilerInstance) {
-  const nativeElToInstallOn = instanceForEventHandlers.relative$w(
-    `#${instanceForEventHandlers.props.id}`,
-  );
-  EVENT_HANDLER_NAMES.forEach((eventName) => {
-    log(
-      `${instanceForEventHandlers.instanceId} id: ${instanceForEventHandlers.props.id} instance.nativeEl ${eventName} set`,
-    );
-    const eventHandlerSetter = nativeElToInstallOn[eventName];
-    if (typeof eventHandlerSetter !== 'function') {
-      return;
-    }
-
-    log(
-      `Installing event handler on instanceId: ${instanceForEventHandlers.instanceId} propId: ${instanceForEventHandlers.props.id} eventName: ${eventName}`,
-    );
-    eventHandlerSetter.call(nativeElToInstallOn, function (...args: any[]) {
-      // there's no native way to remove event handler from wix element
-      if (instanceForEventHandlers.ignoreEvents) {
-        log(
-          `Ignoring event for ${instanceForEventHandlers.instanceId} eventName: ${eventName}`,
-        );
-        return;
-      }
-
-      if (typeof instanceForEventHandlers.props[eventName] === 'function') {
-        log(`Calling ${eventName} handler on #${instanceForEventHandlers.props.id} instanceId: ${instanceForEventHandlers.instanceId}...`);
-        //@ts-expect-error
-        return instanceForEventHandlers.props[eventName](...args);
-      }
-    });
-  });
-}
-
-function toggleVisibility(instance: ReactVeloReconcilerInstance, action: 'show' | 'hide') {
-  const innerToggleVisibility = (instance: ReactVeloReconcilerInstance, action: 'show' | 'hide') => {
-    if (instance && instance.props.id) {
-      const nativeEl = instance.relative$w(`#${instance.props.id}`);
-      if (nativeEl) {
-        if (typeof nativeEl[action] === 'function') {
-          nativeEl[action]();
-        } else {
-          console.log(`Warning: ${action}() is not defined for #${instance.props.id} ${typeof instance.props.id}}`);
-        }
-      }
-    }
-
-    instance.children.map(child => innerToggleVisibility(child, action));
-  };
-
-  innerToggleVisibility(instance, action);
-}
-
-const setIgnoreEvents = (instance: ReactVeloReconcilerInstance) => {
-  // there's no native way to remove event handler from wix element, so must do the hack:
-  function setIgnoreEventsInner(child: ReactVeloReconcilerInstance) {
-    child.ignoreEvents = true;
-    child.children.map(setIgnoreEventsInner);
-  }
-  setIgnoreEventsInner(instance);
-}
-
-interface ReactVeloReconcilerInstance {
-  type: string;
-  props: Record<string, unknown>;
-  rootContainer: any;
-  hostContext: Record<string, never>;
-  children: ReactVeloReconcilerInstance[];
-  instanceId: string;
-  relative$w: any;
-  parent: ReactVeloReconcilerInstance | null;
-  ignoreEvents?: boolean;
 }
 
 interface RepeaterDataItem {
@@ -179,8 +104,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
         allProps,
       )}`,
     );
-
-    const instance: ReactVeloReconcilerInstance = {
+    const instance = new ReactVeloReconcilerInstance({
       type,
       props: {
         ...allProps,
@@ -191,91 +115,59 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       instanceId: rootContainer.lastInstanceId++ + '',
       relative$w: rootContainer.$w,
       parent: null,
-    };
+    }, log);
+   
 
     rootContainer.instancesMap.set(instance.instanceId, instance);
     log(
       `createInstance() instanceId: ${instance.instanceId} for propsId: ${instance.props.id}`,
     );
 
-    let nativeEl = null;
-    if (instance.props.id) {
-      nativeEl = instance.relative$w(`#${instance.props.id}`);
+    if (hostContext.type !== 'repeater') {
+      instance.applyPropsOnNativeEl();
     }
 
-    if (nativeEl) {
-      const unsettablePropNames = ['id', ...EVENT_HANDLER_NAMES];
-      if (hostContext.type !== 'repeater') {
-        log(`Setting props ${safeJsonStringify(instance.props)} on nativeEl: ${instance.props.id}`);
-        applyPropsOnObjectExcept(nativeEl, instance.props, unsettablePropNames);
-      }
+    if (type === 'repeater') {
+      log(`#${instance.props.id} (${instance.instanceId}) is repeater type`);
 
-      if (type === 'repeater') {
-        log(`#${instance.props.id} (${instance.instanceId}) is repeater type`);
-  
-        // @ts-expect-error
-        nativeEl.onItemReady(($item, props) => {
-          log(
-            `Repeater item ready: ${props._id} children: ${safeJsonStringify(
-              rootContainer.instancesMap.get(props._id).children.map((instance: ReactVeloReconcilerInstance) => ({ instanceId: instance.instanceId, propsId: instance.props.id })),
-            )}`,
-          );
-
-          const setPropsAndEventHandlers = (instance: ReactVeloReconcilerInstance) => {
-            if (!instance.props.id) {
-              log(`Unable to set props and event handlers on instanceId: ${instance.instanceId}, no props.id.`);
-              return;
-            }
-
-            const childNativeEl = instance.relative$w('#' + instance.props.id);
-
-            if (childNativeEl) {
-              log(`Setting props ${safeJsonStringify(instance.props)} and event handlers on ${instance.props.id}`);
-              applyPropsOnObjectExcept(
-                childNativeEl,
-                instance.props,
-                unsettablePropNames,
-              );
-              installEventHandlers(instance);
-            } else {
-              log(`Unable to set props and event handlers on ${instance.props.id} for ${props._id}, native element not found`);
-            }
-          };
-
-          const setRelative$wOnChildren = (child: ReactVeloReconcilerInstance) => {
-            if (Array.isArray(child.children)) {
-              child.children.forEach(setRelative$wOnChildren);
-            }
-            
-            log(`Setting relative$w on ${child.props.id} for ${props._id}`);
-            child.relative$w = $item;
-            setPropsAndEventHandlers(child);
-          };
-
-          const repeaterItemInstance = rootContainer.instancesMap.get(props._id);
-          repeaterItemInstance.relative$w = $item;
-          setPropsAndEventHandlers(repeaterItemInstance);
-          repeaterItemInstance.children.forEach(setRelative$wOnChildren);
-        });
-
-        nativeEl.data = [];
-      }
-
-      if (hostContext.type !== 'repeater' && type !== 'repeater') {
-          installEventHandlers(instance);
-      } else {
+      // @ts-expect-error
+      instance.getNativeEl().onItemReady(($item, props) => {
         log(
-          `Skipping event handlers install. ${type === 'repeater' ? 'Repeater': 'Repeater item'}: instanceId: ${instance.instanceId} propsId: ${instance.props.id}`,
+          `Repeater item ready: ${props._id} children: ${safeJsonStringify(
+            rootContainer.instancesMap.get(props._id).children.map((instance: ReactVeloReconcilerInstance) => ({ instanceId: instance.instanceId, propsId: instance.props.id })),
+          )}`,
         );
-      }
+
+        const repeaterItemInstance = rootContainer.instancesMap.get(props._id);
+        repeaterItemInstance.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => {
+          currentInstance.setRelative$w($item);
+          currentInstance.setRepeaterItemReady();
+          currentInstance.applyPropsOnNativeEl();
+          if (currentInstance !== repeaterItemInstance) {
+            currentInstance.installEventHandlers();
+          }
+        })
+      });
+
+      log(`#${instance.props.id} ${instance.instanceId} repeater data = []`);
+      instance.getNativeEl().data = [];
+    }
+
+    if (hostContext.type !== 'repeater' && type !== 'repeater') {
+        instance.installEventHandlers();
     } else {
-      if (instance.props.id) {
-        console.log(
-          `Warning: no nativeEl for #${instance.props.id} of type ${type} on instanceId: ${instance.instanceId}`,
-          nativeEl,
-        );
+      log(
+        `Skipping event handlers install. ${type === 'repeater' ? 'Repeater': 'Repeater item'}: instanceId: ${instance.instanceId} propsId: ${instance.props.id}`,
+      );
+      if (type !== 'repeater') {
+        instance.setRelative$w(() => {
+          console.log('Error, calling relative$w on repeater item before it is ready!', new Error().stack);
+          return true;
+        });
+        instance.markAsRepeaterItem();
       }
     }
+
 
     return instance;
   },
@@ -340,7 +232,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       );
       return;
     }
-    const nativeEl = instance.relative$w(`#${instance.props.id}`);
+    const nativeEl = instance.getNativeEl();
     if (!nativeEl) {
       console.log(
         `Warning: ${instance.instanceId} did not locate element of props id: ${instance.props.id}, bailing out`,
@@ -359,7 +251,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
           if (key === 'children' && typeof payload[key] === 'string') {
             log(`Should set text of ${instance.props.id}: ${payload[key]}, but we dont support that yet`);
           } else if (key !== 'children') {
-            log(`set value of ${instance.props.id}: ${key} -> ${payload[key]}`);
+            log(`set value of #${instance.props.id}: key "${key}" to "${payload[key]}"`);
             // nativeEl[key] = payload[key];
             if (typeof payload[key] === 'object') {
               Object.assign(nativeEl[key], payload[key]);
@@ -385,7 +277,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     log(
       `appendChildToContainer(container: #${container.id}, child: #${child.props.id} (${child.instanceId}))`,
     );
-    toggleVisibility(child, 'show');
+    child.toggleVisibility('show');
     //child.parent = container; dunno, parent is supposed to be ReactVeloReconcilerInstance
     container.children.push(child);
   },
@@ -398,14 +290,14 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       container.children.splice(index, 0, child);
       //child.parent = container; dunno, parent is supposed to be ReactVeloReconcilerInstance
     }
-    toggleVisibility(child, 'show');
+    child.toggleVisibility('show');
   },
   removeChildFromContainer(container, child) {
     log(
       `removeChildFromContainer(container: #${container.id}, child: #${child.props.id} (${child.instanceId}))`,
     );
-    setIgnoreEvents(child);
-    toggleVisibility(child, 'hide');
+    child.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => currentInstance.setIgnoreEvents());
+    child.toggleVisibility('hide');
   },
   clearContainer(container) {
     container.children.forEach((child: ReactVeloReconcilerInstance) => {
@@ -425,17 +317,19 @@ export const reconcilerDefinition: ReconcilerDefinition = {
 
     if (parent.type === 'repeater') {
       log(`appendInitialChild() done for ${child.props.id} on repeater ${parent.props.id}`);
-      const nativeEl = parent.relative$w(`#${parent.props.id}`);
+      const nativeEl = parent.getNativeEl();
       if (nativeEl) {
         nativeEl.data = [
           ...nativeEl.data,
           { ...child.props, _id: child.instanceId },
         ];
-        log(`appendInitialChild repeater #${parent.props.id} (${parent.instanceId}) data: ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
+        log(`appendInitialChild #${parent.props.id} ${parent.instanceId} repeater data = ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
       }
     }
-
-    toggleVisibility(child, 'show');
+    // } else {
+    //   toggleVisibility(child, 'show');
+    // }
+    child.toggleVisibility('show');
   },
   appendChild(parent, child) {
     log(
@@ -444,40 +338,39 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     parent.children.push(child);
     if (parent.type === 'repeater') {
       log(`appendChild() done for ${child.props.id} on repeater ${parent.props.id}`);
-      const nativeEl = parent.relative$w(`#${parent.props.id}`);
+      const nativeEl = parent.getNativeEl();
       if (nativeEl) {
         nativeEl.data = [
           ...nativeEl.data,
           { ...child.props, _id: child.instanceId },
         ];
-        log(`appendChild repeater #${parent.props.id} (${parent.instanceId}) data: ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
+        log(`appendChild #${parent.props.id} ${parent.instanceId} repeater data = ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
       }
     }
     child.parent = parent;
-    toggleVisibility(child, 'show');
+    child.toggleVisibility('show');
   },
   insertBefore(parent, newChild, beforeChild) {
-    log(`insertBefore(${parent}, ${newChild}, ${beforeChild})`);
-    log(`insertBefore(${parent.type}, ${newChild.type}, ${beforeChild.type})`);
+    log(`insertBefore(${parent.type}${parent.props.id}, ${newChild.type}#${newChild.props.id}, ${beforeChild.type}#${beforeChild.props.id})`);
     parent.children.splice(parent.children.indexOf(beforeChild), 0, newChild);
 
     newChild.parent = parent;
     newChild.relative$w = parent.relative$w;
 
-    const newChildNativeEl = newChild.relative$w(`#${newChild.props.id}`);
+    const newChildNativeEl = newChild.getNativeEl();
     if (newChild.hostContext.type === 'repeater') {
-      installEventHandlers(newChild);
+      newChild.installEventHandlers();
       applyPropsOnObjectExcept(newChildNativeEl, newChild.props, [
         'id',
         ...EVENT_HANDLER_NAMES,
       ]);
     }
     //newChildNativeEl.show();
-    toggleVisibility(newChild, 'show');
+    newChild.toggleVisibility('show');
 
     // Should we even have this?
     if (parent.type === 'repeater') {
-      const nativeEl = parent.relative$w(`#${parent.props.id}`);
+      const nativeEl = parent.getNativeEl();
       if (nativeEl) {
         nativeEl.data = nativeEl.data.splice(
           nativeEl.data.findIndex((c: RepeaterDataItem) => c._id === beforeChild.instanceId),
@@ -494,10 +387,11 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       `removeChild({ props.id: #${parent.props.id}, instanceId: ${parent.instanceId}, type: ${parent.type} }, { props.id: #${child.props.id}, instanceId: ${child.instanceId}, type: ${child.type} })`,
     );
     
-    setIgnoreEvents(child);
+    child.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => currentInstance.setIgnoreEvents());
+    child.toggleVisibility('hide');
 
     if (parent.type === 'repeater') {
-      const nativeEl = parent.relative$w(`#${parent.props.id}`);
+      const nativeEl = parent.getNativeEl();
       if (nativeEl) {
         nativeEl.data = [
           ...nativeEl.data.filter((item: RepeaterDataItem) => item._id !== child.instanceId),
@@ -505,8 +399,6 @@ export const reconcilerDefinition: ReconcilerDefinition = {
         log(`removeChild repeater #${parent.props.id} (${parent.instanceId}) data: ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
       }
     }
-
-    toggleVisibility(child, 'hide');
   },
 
   // Unknown

@@ -62,4 +62,4 @@ describe('todo list repeater', () => {
     afterAll(async () => {
         await browser.close();
     });
-})
+});

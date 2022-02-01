@@ -30,7 +30,10 @@ export async function getPageAtUrl(browser: puppeteer.Browser, url: string) {
             // const responseCdp = await client.send("Fetch.getResponseBody", { requestId });
             // console.log(`Response body for ${requestId} is ${responseCdp.body.length} bytes`);
             console.log(`${requestId} - ${event.request.url} paused.`);
-            const bundleData = await (await fs.promises.readFile('./dist/react-velo-bundle.js')).toString('base64');
+            const bundleData = Buffer.concat([
+              Buffer.from('self.REACT_VELO_DEBUG = true;\n'),
+              await fs.promises.readFile('./dist/react-velo-bundle.js'),
+            ]).toString('base64');
             await client.send("Fetch.fulfillRequest", { requestId, responseCode: 200, body: bundleData, responseHeaders: [{ name: "Content-Type", value: "application/javascript" }] });
             console.log(`${bundleData.length} bytes bundle sent`);
             return;
@@ -55,7 +58,8 @@ export async function getPageAtUrl(browser: puppeteer.Browser, url: string) {
     await page.goto(url, { waitUntil: 'networkidle0'});
     await waitForPerformanceEntry(page, 'page interactive (beat 33)');
     console.log('Got beat 33');
-    await reactVeloRenderedPromise;
+    const rejectTimeout = new Promise((resolve, reject) => setTimeout(() => reject(new Error(`Timeout waiting for react-velo render`)), 60 * 1000));
+    await Promise.race([reactVeloRenderedPromise, rejectTimeout]);
     console.log('Got react velo rendered');
     console.log(`We are ready to start the test.`);
     
