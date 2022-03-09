@@ -408,7 +408,12 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   shouldSetTextContent() {
     return false;
   },
-  getPublicInstance() {},
+  getPublicInstance(instance: ReactVeloReconcilerInstance) {
+    log(
+      `getPublicInstance({ instance: #${instance.props.id}, instanceId: ${instance.instanceId} })`,
+    );
+    return instance.getNativeEl();
+  },
   prepareForCommit() {
     return null;
   },
