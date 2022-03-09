@@ -45,12 +45,13 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
             return this._nativeEl;
         }
 
-        const nativeEl = this.relative$w(`#${this.props.id}`);
+        const identifier = this.props.id || this.type;
+        const nativeEl = this.relative$w(`#${identifier}`);
         if (nativeEl) {
             this._nativeEl = nativeEl;
         } else {
             console.log(
-                `Warning: no nativeEl for #${this.props.id} of type ${this.type} on instanceId: ${this.instanceId}`,
+                `Warning: no nativeEl for #${identifier} of type ${this.type} props id: ${this.props.id} on instanceId: ${this.instanceId}`,
                 nativeEl,
               );
         }

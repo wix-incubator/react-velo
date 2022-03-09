@@ -39,3 +39,23 @@ export function render(
   getGlobal().performance && getGlobal().performance.mark('react-velo rendered');
   getGlobal().REACT_VELO_DEBUG && console.log('react-velo rendered');
 }
+
+
+const reloHandler = {
+  get(target: any, prop: string, receiver: any) {
+    return function ReactVeloComponent(props: any) {
+      // Guess it's a repeater if it has a renderItem prop
+      if (props.renderItem) {
+        const children = (props.data || []).map((item: any) => {
+          return React.createElement("repeater-item", null, props.renderItem(item));
+        });
+
+        return React.createElement('repeater', { id: prop, ...props }, ...children);
+      }
+
+      return React.createElement(prop, props);
+    }
+  },
+};
+
+export const W = new Proxy({}, reloHandler);
