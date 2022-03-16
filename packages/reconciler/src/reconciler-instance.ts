@@ -1,4 +1,5 @@
 import { applyPropsOnObjectExcept, safeJsonStringify } from "./utils";
+import {  nativeElementsPatches } from './native-elements-patches';
 
 interface ReactVeloReconcilerInstanceProps {
     instanceId: string;
@@ -40,6 +41,14 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
         this._log = log;
     }
 
+    _applyNativeElPatch(nativeEl: any) {
+      const nativeType: string = nativeEl.type;
+      const patch = nativeElementsPatches[nativeType];
+      if (typeof patch === 'function') {
+        patch(nativeEl);
+      }
+    }
+
     getNativeEl() {
         if (this._nativeEl) {
             return this._nativeEl;
@@ -49,6 +58,7 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
         const nativeEl = this.relative$w(`#${identifier}`);
         if (nativeEl) {
             this._nativeEl = nativeEl;
+            this._applyNativeElPatch(this._nativeEl);
         } else {
             console.log(
                 `Warning: no nativeEl for #${identifier} of type ${this.type} props id: ${this.props.id} on instanceId: ${this.instanceId}`,
