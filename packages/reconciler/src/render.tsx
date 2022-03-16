@@ -58,4 +58,8 @@ const reloHandler = {
   },
 };
 
+// <W.MyAwesomeButton ... />
 export const W = new Proxy({}, reloHandler);
+
+// <V.button id="MyAwesomeButton" ... />
+export const V = new Proxy({}, reloHandler);
