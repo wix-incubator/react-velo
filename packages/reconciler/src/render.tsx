@@ -1,12 +1,16 @@
-import React, { createContext } from 'react';
+import type ReactType from 'react';
 import reconciler from './reconciler';
 import { getGlobal } from './utils';
 
+let ReactInstance: typeof ReactType | null = null;
+
 export function render(
-  Component: React.ComponentType<any>,
+  Component: ReactType.ComponentType<any>,
   $w: Function,
+  React: typeof ReactType,
   callback?: () => void,
 ) {
+  ReactInstance = React;
   // @see https://github.com/facebook/react/blob/993ca533b42756811731f6b7791ae06a35ee6b4d/packages/react-reconciler/src/ReactRootTags.js
   // I think we are a legacy root?
   const container = reconciler.createContainer(
@@ -21,21 +25,20 @@ export function render(
   // eslint-disable-next-line react/jsx-no-constructed-context-values
   const renderContextValue = { reconciler };
 
-  const RenderContext = createContext<{
+  const RenderContext = ReactInstance!.createContext<{
     reconciler: typeof reconciler;
   } | null>(null);
 
   // callback is cast here because the typings do not mark that argument
   // as optional, even though it is.
   reconciler.updateContainer(
-    <RenderContext.Provider value={renderContextValue}>
-      <Component />
-    </RenderContext.Provider>,
+      ReactInstance!.createElement(RenderContext.Provider, { value: renderContextValue },
+          ReactInstance!.createElement(Component, null)),
     container,
     null,
     callback as any,
   );
-  
+
   getGlobal().performance && getGlobal().performance.mark('react-velo rendered');
   getGlobal().REACT_VELO_DEBUG && console.log('react-velo rendered');
 }
@@ -47,13 +50,13 @@ const reloHandler = {
       // Guess it's a repeater if it has a renderItem prop
       if (props.renderItem) {
         const children = (props.data || []).map((item: any) => {
-          return React.createElement("repeater-item", null, props.renderItem(item));
+          return ReactInstance!.createElement("repeater-item", null, props.renderItem(item));
         });
 
-        return React.createElement('repeater', { id: prop, ...props }, ...children);
+        return ReactInstance!.createElement('repeater', { id: prop, ...props }, ...children);
       }
 
-      return React.createElement(prop, props);
+      return ReactInstance!.createElement(prop, props);
     }
   },
 };

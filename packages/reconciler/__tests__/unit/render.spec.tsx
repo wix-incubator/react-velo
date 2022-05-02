@@ -8,7 +8,6 @@ describe.only('render sanity', () => {
         const $w = jest.fn(() => ({}));
         //@ts-expect-error
         const App = () => <div><button id="someButtonId" label="hello from button!" /></div>;
-        render(App, $w);
-    }); 
-
+        render(App, $w, React);
+    });
 });
