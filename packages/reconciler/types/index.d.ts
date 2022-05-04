@@ -2,6 +2,7 @@
 /// <reference path="/types/pages/$w.d.ts" />
 
 /// Generic helpers
+import type { React } from 'react';
 type ExtractNameFromStringWithHash<StringWithHash extends string> =
     StringWithHash extends `#${infer Name}` ? Name : never;
 
@@ -77,7 +78,12 @@ declare namespace JSX {
 }
 
 declare module '@wix/react-velo' {
-    export function render(rootElement: JSX.Element, $w: Function): void;
+    export function render(
+        rootElement: JSX.Element,
+        $w: Function,
+        react: typeof React,
+        callback?: Function
+    ): void;
     export const W: ReactVeloOutputElementsMap;
     export const V: ReactVeloOutputTypesMap;
 }
