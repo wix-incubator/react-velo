@@ -15,4 +15,7 @@
       "skipLibCheck": true,
       "sourceMap": true
     },
+    "exclude": [
+      "__tests__/testTypes/generated"
+    ]
   }

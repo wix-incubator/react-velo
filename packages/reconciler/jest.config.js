@@ -15,4 +15,5 @@ module.exports = {
     transform: {
         "^.+\\.tsx?$": ['babel-jest', {rootMode: "upward"}]
     },
+    globalSetup: __dirname + '/jest.setup.js'
 };

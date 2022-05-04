@@ -1,8 +1,7 @@
 import React from 'react';
 import { render } from '../../src/render';
 
-
-describe.only('render sanity', () => {
+describe('render sanity', () => {
 
     it('should return an instance and the map should be updated', () => {
         const $w = jest.fn(() => ({}));
