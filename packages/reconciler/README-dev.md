@@ -5,16 +5,19 @@
 in velo:
 ```es6
 import React, { useState } from 'react';
-self.React = React;
+self.reactVeloGlobals =  {
+  ReactInstance: React,
+}
 importScripts('http://localhost:9080/react-velo-bundle.js');
+const {W, render} = reactVelo;
 
 function App() {
   const [count, setCount] = useState(0);
   return (
     <>
-		<label id="counter" label={`${count}`}/>
-    	<button id="increment" onClick={() => setCount(count + 1)}/>
-    	<button id="decrement" onClick={() => setCount(count - 1)}/>
+		<W.counter label={`${count}`}/>
+    	<W.increment onClick={() => setCount(count + 1)}/>
+    	<W.decrement" onClick={() => setCount(count - 1)}/>
 		{count % 10 === 0 ? <div id="box"/> : null}
     </>
   );

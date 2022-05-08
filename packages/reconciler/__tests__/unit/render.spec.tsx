@@ -2,6 +2,9 @@ import React from 'react';
 import { render } from '../../src/render';
 
 describe('render sanity', () => {
+    beforeEach(() => {
+        (global as any).self = global;
+    });
 
     it('should return an instance and the map should be updated', () => {
         const $w = jest.fn(() => ({}));

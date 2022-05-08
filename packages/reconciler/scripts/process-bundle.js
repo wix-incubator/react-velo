@@ -16,10 +16,10 @@ function getRequireFunctionName(source) {
 (async function main() {
     const bundleFile = path.resolve([process.cwd(), 'dist', 'react-velo-bundle.js'].join(path.sep));
     console.log(`CWD: ${process.cwd()} bundleFile: ${bundleFile}`);
-    
+
     const bundle = await fs.readFile(bundleFile, 'utf8');
     console.log(`${typeof bundle} length: ${bundle.length}`);
-    
+
     const requireFnName = getRequireFunctionName(bundle);
     console.log(`requireFnName: '${requireFnName}'`);
     if (!requireFnName) {
@@ -30,7 +30,7 @@ function getRequireFunctionName(source) {
     let replaceCounter = 0;
     const newBundle = bundle.replace(replaceRegex, () => {
         replaceCounter++;
-        return `React`;
+        return `reactVeloGlobals.ReactInstance`;
     });
     await fs.writeFile(bundleFile, newBundle, 'utf8');
 

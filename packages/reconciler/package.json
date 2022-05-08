@@ -2,11 +2,11 @@
     "name": "@wix/react-velo",
     "version": "1.0.1",
     "description": "",
-    "main": "./dist/src/render.js",
+    "main": "./dist/react-velo-bundle.js",
     "types": "types/index.d.ts",
     "scripts": {
         "build": "tsc && yarn build-bundle",
-        "build-bundle": "esbuild src/render.tsx --bundle --minify --target=es2020 --platform=browser --global-name=reactVelo --external:react --external:React --outfile=./dist/react-velo-bundle.js && node scripts/process-bundle.js",
+        "build-bundle": "esbuild src/render.tsx --bundle --minify --target=es2020 --platform=browser --global-name=reactVelo --external:react --outfile=./dist/react-velo-bundle.js && node scripts/process-bundle.js",
         "serve": "http-server dist -p 9080 -c-1",
         "serve:types": "http-server types -p 9081 -c-1",
         "test": "jest"

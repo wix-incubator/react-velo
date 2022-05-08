@@ -22,13 +22,13 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
     children: ReactVeloReconcilerInstance[];
     relative$w: any;
     parent: ReactVeloReconcilerInstance | null;
-    
+
     private _pendingVisibilityActions: ("show" | "hide")[] = [];
     private _repeaterItemReady?: boolean;
     private _ignoreEvents: boolean = false;
     private _nativeEl: any = null;
     private _log: (st: string) => void;
-    
+
     constructor(props: ReactVeloReconcilerInstanceProps, log: (st: string) => void) {
         this.relative$w = props.relative$w;
         this.instanceId = props.instanceId;
@@ -49,12 +49,14 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
       }
     }
 
+    private getIdentifier = () => this.props.id || this.type;
+
     getNativeEl() {
         if (this._nativeEl) {
             return this._nativeEl;
         }
 
-        const identifier = this.props.id || this.type;
+        const identifier = this.getIdentifier();
         const nativeEl = this.relative$w(`#${identifier}`);
         if (nativeEl) {
             this._nativeEl = nativeEl;
@@ -70,17 +72,18 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
     }
 
     toggleNativeInstanceVisibility(action: 'show' | 'hide') {
-        if (this.props.id) {
-          const nativeEl = this.getNativeEl();
-          if (nativeEl) {
-            if (typeof nativeEl[action] === 'function') {
-              this._log(`innerToggleVisibility ${action} for instanceId: ${this.instanceId} propId: ${this.props.id}`);
-              nativeEl[action]();
-            } else {
-              console.log(`Warning: ${action}() is not defined for #${this.props.id} ${typeof this.props.id}}`);
-            }
-          }
+      const nativeEl = this.getNativeEl();
+      const identifier = this.getIdentifier();
+      if (nativeEl) {
+        if (typeof nativeEl[action] === 'function') {
+          this._log(`innerToggleVisibility ${action} for instanceId: ${this.instanceId} propId: ${identifier}`);
+          nativeEl[action]();
+        } else {
+          console.log(`Warning: ${action}() is not defined for #${identifier} ${typeof this.props.id}}`);
         }
+      } else {
+        console.log(`Warning: ${action}() cannot be performed - element with id ${identifier} was not found`);
+      }
     }
 
     toggleVisibility(action: 'show' | 'hide') {
@@ -89,7 +92,8 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
             return;
         }
 
-        this._log(`toggleVisibility ${action} for instanceId: ${this.instanceId} propId: ${this.props.id}`);
+        const identifier = this.getIdentifier();
+        this._log(`toggleVisibility ${action} for instanceId: ${this.instanceId} propId: ${identifier}`);
         this.toggleNativeInstanceVisibility(action);
         this.children.map(child => child.toggleVisibility(action));
     }
@@ -105,15 +109,16 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
 
     installEventHandlers() {
         const nativeElToInstallOn = this.getNativeEl();
+        const identifier = this.getIdentifier();
         this._log(
-          `Installing event handlers (${EVENT_HANDLER_NAMES.join(',')}) on instanceId: ${this.instanceId} propId: ${this.props.id}`,
+          `Installing event handlers (${EVENT_HANDLER_NAMES.join(',')}) on instanceId: ${this.instanceId} propId: ${identifier}`,
         );
         EVENT_HANDLER_NAMES.forEach((eventName) => {
           const eventHandlerSetter = nativeElToInstallOn[eventName];
           if (typeof eventHandlerSetter !== 'function') {
             return;
           }
-      
+
           const self = this;
           eventHandlerSetter.call(nativeElToInstallOn, function (...args: any[]) {
             // there's no native way to remove event handler from wix element
@@ -123,7 +128,7 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
               );
               return;
             }
-      
+
             if (typeof self.props[eventName] === 'function') {
                self._log(`Calling ${eventName} handler on #${self.props.id} instanceId: ${self.instanceId}...`);
               //@ts-expect-error
@@ -139,8 +144,9 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
 
     applyPropsOnNativeEl() {
         if (this.getNativeEl()) {
+            const identifier = this.getIdentifier();
             const unsettablePropNames = ['id', 'children', ...EVENT_HANDLER_NAMES];
-            this._log(`Setting props ${safeJsonStringify(this.props)} on nativeEl #${this.props.id}`);
+            this._log(`Setting props ${safeJsonStringify(this.props)} on nativeEl #${identifier}`);
             applyPropsOnObjectExcept(this.getNativeEl(), this.props, unsettablePropNames);
         }
     }

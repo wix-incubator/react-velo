@@ -2,6 +2,7 @@ import type ReactType from 'react';
 import reconciler from './reconciler';
 import { getGlobal } from './utils';
 
+declare var self: any;
 let ReactInstance: typeof ReactType | null = null;
 
 export function render(
@@ -11,6 +12,9 @@ export function render(
   callback?: () => void,
 ) {
   ReactInstance = React;
+  self.reactVeloGlobals = {
+    ReactInstance,
+  };
   // @see https://github.com/facebook/react/blob/993ca533b42756811731f6b7791ae06a35ee6b4d/packages/react-reconciler/src/ReactRootTags.js
   // I think we are a legacy root?
   const container = reconciler.createContainer(
