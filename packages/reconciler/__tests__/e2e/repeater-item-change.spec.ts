@@ -35,7 +35,10 @@ describe('todo list repeater', () => {
             throw new Error(`Unable to find toggle button`);
         }
         await toggle.click();
-        await page.waitForFunction(() => Array.from(document.querySelectorAll('[data-testid="richTextElement"]')).map(el => (el as HTMLElement).innerText).filter(t => t === 'On').length === 3);
+        await page.waitForFunction(
+            () => Array.from(document.querySelectorAll('[data-testid="richTextElement"]'))
+            .map(el => (el as HTMLElement).innerText).filter(t => t === 'On').length === 3
+        );
 
         const richTextElementsAfterClick = await page.evaluate(getRichTextElements);
 

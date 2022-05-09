@@ -15,16 +15,15 @@ async function waitForPerformanceEntry(page: puppeteer.Page, entry: string) {
     entry);
 }
 
-export async function getPageAtUrl(browser: puppeteer.Browser, url: string) {
+export async function getPageAtUrl(browser: puppeteer.Browser, url: string, consoleHandler?: (event: puppeteer.ConsoleMessage) => void) {
     const page = await browser.newPage();
     const client = await page.target().createCDPSession();
     await client.send("Fetch.enable", {
         patterns: [{ requestStage: "Response" }]
-      });
+    });
     
-      client.on("Fetch.requestPaused", async (event: Protocol.Fetch.RequestPausedEvent) => {
+    client.on("Fetch.requestPaused", async (event: Protocol.Fetch.RequestPausedEvent) => {
         const { requestId } = event;
-        //console.log(`Request "${requestId}" paused.`);
 
         if (event.request.url.endsWith('react-velo-bundle.js') && (event.responseErrorReason || event.responseStatusCode)) {
             // const responseCdp = await client.send("Fetch.getResponseBody", { requestId });
@@ -53,15 +52,23 @@ export async function getPageAtUrl(browser: puppeteer.Browser, url: string) {
         }
     };
     page.on('console', pageConsoleHandler);
-    
 
-    await page.goto(url, { waitUntil: 'networkidle0'});
-    await waitForPerformanceEntry(page, 'page interactive (beat 33)');
-    console.log('Got beat 33');
-    const rejectTimeout = new Promise((resolve, reject) => setTimeout(() => reject(new Error(`Timeout waiting for react-velo render`)), 60 * 1000));
-    await Promise.race([reactVeloRenderedPromise, rejectTimeout]);
-    console.log('Got react velo rendered');
-    console.log(`We are ready to start the test.`);
+    if (consoleHandler) {
+      page.on('console', consoleHandler);
+    }
     
-    return page;
+    try {
+      await page.goto(url, { waitUntil: 'networkidle0'});
+      await waitForPerformanceEntry(page, 'page interactive (beat 33)');
+      console.log('Got beat 33');
+      const rejectTimeout = new Promise((resolve, reject) => setTimeout(() => reject(new Error(`Timeout waiting for react-velo render`)), 60 * 1000));
+      await Promise.race([reactVeloRenderedPromise, rejectTimeout]);
+      console.log('Got react velo rendered');
+      console.log(`We are ready to start the test.`);
+      
+      return page;
+    } catch (ex) {
+      throw new Error(`Failed to intialize site for test: ${(ex as Error).message}`);
+    }
+
 }

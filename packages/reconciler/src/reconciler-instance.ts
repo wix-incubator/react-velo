@@ -23,8 +23,6 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
     relative$w: any;
     parent: ReactVeloReconcilerInstance | null;
 
-    private _pendingVisibilityActions: ("show" | "hide")[] = [];
-    private _repeaterItemReady?: boolean;
     private _ignoreEvents: boolean = false;
     private _nativeEl: any = null;
     private _log: (st: string) => void;
@@ -87,24 +85,10 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
     }
 
     toggleVisibility(action: 'show' | 'hide') {
-        if (typeof this._repeaterItemReady === 'boolean' && !this._repeaterItemReady) {
-            this._pendingVisibilityActions.push(action);
-            return;
-        }
-
         const identifier = this.getIdentifier();
         this._log(`toggleVisibility ${action} for instanceId: ${this.instanceId} propId: ${identifier}`);
         this.toggleNativeInstanceVisibility(action);
         this.children.map(child => child.toggleVisibility(action));
-    }
-
-    markAsRepeaterItem() {
-        this._repeaterItemReady = false;
-    }
-
-    setRepeaterItemReady() {
-        this._repeaterItemReady = true;
-        this._pendingVisibilityActions.forEach((action) => this.toggleNativeInstanceVisibility(action));
     }
 
     installEventHandlers() {

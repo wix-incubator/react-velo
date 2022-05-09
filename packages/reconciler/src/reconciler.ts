@@ -12,8 +12,18 @@ function log(...args: any[]) {
   }
 }
 
-interface RepeaterDataItem {
-  _id: ReactVeloReconcilerInstance['instanceId'];
+// Unfortunalty this is thet only way, get the `repeaterContext` prop from internalHandle
+function getRelative$wFromParentRepeaterItemContext(internalHandle: any) {
+  let parent = internalHandle.return;
+  while (parent.elementType) {
+    if (parent.pendingProps && parent.pendingProps.repeaterContext) {
+      return parent.pendingProps.repeaterContext.relative$w;
+    }
+
+    parent = parent.return;
+  }
+
+  return null;
 }
 
 type ReconcilerDefinition = reactReconciler.HostConfig<
@@ -78,6 +88,13 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       };
     }
 
+    if (type === 'repeater-item') {
+      return {
+        type: 'repeater-item',
+        parent: parentHostContext,
+      };
+    }
+
     return parentHostContext;
   },
 
@@ -95,6 +112,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     allProps,
     rootContainer,
     hostContext,
+    internalHandle,
   ) {
     if (typeof rootContainer.$w !== 'function') {
       console.log(`Warning: rootContainer.$w is not defined`);
@@ -116,58 +134,42 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       relative$w: rootContainer.$w,
       parent: null,
     }, log);
-   
+
+    if (instance.props.repeaterContext) {
+      instance.relative$w = (instance.props.repeaterContext as any).relative$w;
+    }
+
+    if (hostContext.type === 'repeater-item') {
+      instance.relative$w = getRelative$wFromParentRepeaterItemContext(internalHandle);
+    }
 
     rootContainer.instancesMap.set(instance.instanceId, instance);
     log(
-      `createInstance() instanceId: ${instance.instanceId} for propsId: ${instance.props.id}`,
+      `createInstance() instanceId: ${instance.instanceId} for type: ${type} propsId: ${instance.props.id} hostContext: ${safeJsonStringify(hostContext)}`,
     );
 
-    if (hostContext.type !== 'repeater') {
-      instance.applyPropsOnNativeEl();
-    }
+    instance.applyPropsOnNativeEl();
 
     if (type === 'repeater') {
       log(`#${instance.props.id} (${instance.instanceId}) is repeater type`);
 
       // @ts-expect-error
       instance.getNativeEl().onItemReady(($item, props) => {
-        log(
-          `Repeater item ready: ${props._id} children: ${safeJsonStringify(
-            rootContainer.instancesMap.get(props._id).children.map((instance: ReactVeloReconcilerInstance) => ({ instanceId: instance.instanceId, propsId: instance.props.id })),
-          )}`,
-        );
-
-        const repeaterItemInstance = rootContainer.instancesMap.get(props._id);
-        repeaterItemInstance.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => {
-          currentInstance.setRelative$w($item);
-          currentInstance.setRepeaterItemReady();
-          currentInstance.applyPropsOnNativeEl();
-          if (currentInstance !== repeaterItemInstance) {
-            currentInstance.installEventHandlers();
-          }
-        })
+        log(`#${instance.props.id} (${instance.instanceId}) props._id: ${props._id} ready`);
+        (instance.props as any).onReadyItemId(props._id, { relative$w: $item });
       });
 
       log(`#${instance.props.id} ${instance.instanceId} repeater data = []`);
-      instance.getNativeEl().data = [];
-    }
-
-    if (hostContext.type !== 'repeater' && type !== 'repeater') {
-        instance.installEventHandlers();
-    } else {
-      log(
-        `Skipping event handlers install. ${type === 'repeater' ? 'Repeater': 'Repeater item'}: instanceId: ${instance.instanceId} propsId: ${instance.props.id}`,
-      );
-      if (type !== 'repeater') {
-        instance.setRelative$w(() => {
-          console.log('Error, calling relative$w on repeater item before it is ready!', new Error().stack);
-          return true;
-        });
-        instance.markAsRepeaterItem();
+      if (Array.isArray(instance.props.data)) {
+        instance.getNativeEl().data = instance.props.data;
+      } else {
+        console.warn(`Repeater data prop suppose to be an array!`);
       }
     }
 
+    if (type !== 'repeater' && hostContext.type !== 'repeater') {
+        instance.installEventHandlers();
+    }
 
     return instance;
   },
@@ -226,12 +228,6 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   },
   commitUpdate(instance, payload, type, oldProps, newProps) {
     log(`Commiting update #${instance.props.id}`);
-    if (!instance.props.id) {
-      console.log(
-        `Warning: instanceId: ${instance.instanceId} type: ${instance.type} has no props id, bailing out`,
-      );
-      return;
-    }
     const nativeEl = instance.getNativeEl();
     if (!nativeEl) {
       console.log(
@@ -253,7 +249,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
           } else if (key !== 'children') {
             log(`set value of #${instance.props.id}: key "${key}" to "${payload[key]}"`);
             // nativeEl[key] = payload[key];
-            if (typeof payload[key] === 'object') {
+            if (typeof payload[key] === 'object' && key !== 'data') {
               Object.assign(nativeEl[key], payload[key]);
             } else {
               nativeEl[key] = payload[key];
@@ -315,20 +311,6 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     parent.children.push(child);
     child.parent = parent;
 
-    if (parent.type === 'repeater') {
-      log(`appendInitialChild() done for ${child.props.id} on repeater ${parent.props.id}`);
-      const nativeEl = parent.getNativeEl();
-      if (nativeEl) {
-        nativeEl.data = [
-          ...nativeEl.data,
-          { ...child.props, _id: child.instanceId },
-        ];
-        log(`appendInitialChild #${parent.props.id} ${parent.instanceId} repeater data = ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
-      }
-    }
-    // } else {
-    //   toggleVisibility(child, 'show');
-    // }
     child.toggleVisibility('show');
   },
   appendChild(parent, child) {
@@ -336,17 +318,6 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       `appendChild(parent: #${parent.props.id} (${parent.instanceId}), child: #${child.props.id} (${child.instanceId}))`,
     );
     parent.children.push(child);
-    if (parent.type === 'repeater') {
-      log(`appendChild() done for ${child.props.id} on repeater ${parent.props.id}`);
-      const nativeEl = parent.getNativeEl();
-      if (nativeEl) {
-        nativeEl.data = [
-          ...nativeEl.data,
-          { ...child.props, _id: child.instanceId },
-        ];
-        log(`appendChild #${parent.props.id} ${parent.instanceId} repeater data = ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
-      }
-    }
     child.parent = parent;
     child.toggleVisibility('show');
   },
@@ -356,31 +327,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
 
     newChild.parent = parent;
     newChild.relative$w = parent.relative$w;
-
-    const newChildNativeEl = newChild.getNativeEl();
-    if (newChild.hostContext.type === 'repeater') {
-      newChild.installEventHandlers();
-      applyPropsOnObjectExcept(newChildNativeEl, newChild.props, [
-        'id',
-        ...EVENT_HANDLER_NAMES,
-      ]);
-    }
-    //newChildNativeEl.show();
     newChild.toggleVisibility('show');
-
-    // Should we even have this?
-    if (parent.type === 'repeater') {
-      const nativeEl = parent.getNativeEl();
-      if (nativeEl) {
-        nativeEl.data = nativeEl.data.splice(
-          nativeEl.data.findIndex((c: RepeaterDataItem) => c._id === beforeChild.instanceId),
-          0,
-          { ...newChild.props, _id: newChild.instanceId },
-        );
-
-        log(`insertBefore repeater #${parent.props.id} (${parent.instanceId}) data: ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
-      }
-    }
   },
   removeChild(parent, child) {
     log(
@@ -389,16 +336,6 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     
     child.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => currentInstance.setIgnoreEvents());
     child.toggleVisibility('hide');
-
-    if (parent.type === 'repeater') {
-      const nativeEl = parent.getNativeEl();
-      if (nativeEl) {
-        nativeEl.data = [
-          ...nativeEl.data.filter((item: RepeaterDataItem) => item._id !== child.instanceId),
-        ];
-        log(`removeChild repeater #${parent.props.id} (${parent.instanceId}) data: ${nativeEl.data.map((d: RepeaterDataItem) => d._id).join(',')}`);
-      }
-    }
   },
 
   // Unknown

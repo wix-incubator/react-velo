@@ -47,22 +47,36 @@ export function render(
   getGlobal().REACT_VELO_DEBUG && console.log('react-velo rendered');
 }
 
-
-const reloHandler = {
-  get(target: any, prop: string, receiver: any) {
-    return function ReactVeloComponent(props: any) {
+function reactVeloComponentFactory(componentName: string, componentCache: Map<string, Function>) {
+   if (!componentCache.has(componentName))
+    componentCache.set(componentName, ReactInstance!.forwardRef(function SomeReactVeloComponet(props: any, ref) {
       // Guess it's a repeater if it has a renderItem prop
       if (props.renderItem) {
-        const children = (props.data || []).map((item: any) => {
-          return ReactInstance!.createElement("repeater-item", null, props.renderItem(item));
-        });
+        const RepeaterWrapper = (props: any) => {
+          const [ready, setReady] =  ReactInstance!.useState({});
+          return ReactInstance!.createElement('repeater', {
+            id: componentName,
+            onReadyItemId: (itemId: any, repeaterContext: any) => {
+              setReady(Object.assign(Object.assign({}, ready), { [itemId]: repeaterContext }))
+            },
+            data: props.data,
+          }, props.data.map((item: {_id: string}) => typeof (ready as any)[item._id] !== 'undefined' ? ReactInstance!.createElement('repeater-item', { key: item._id, repeaterContext: (ready as any)[item._id] }, props.renderItem(item)) : null));
+        };
 
-        return ReactInstance!.createElement('repeater', { id: prop, ...props }, ...children);
+        return ReactInstance!.createElement(RepeaterWrapper, props);
       }
 
-      return ReactInstance!.createElement(prop, props);
-    }
-  },
+      return ReactInstance!.createElement(componentName, {...props, ref});
+    }));
+    
+    return componentCache.get(componentName);
+   }
+
+const reloHandler = {
+  componentCache: new Map<string, Function>(),
+  get(target: any, prop: string, receiver: any) {
+    return reactVeloComponentFactory(prop, this.componentCache);
+  }
 };
 
 // <W.MyAwesomeButton ... />
