@@ -81,4 +81,73 @@ describe('events handler', () => {
         expect(firstInstanceClickHandler).not.toBeCalled();
         expect(secondnstanceClickHandler).toBeCalled();
     });
+});
+
+describe('styles', () => {
+    it('should set backgroundColor and remove it', () => {
+        const someNativeEl = {
+            style: {
+                removeProperty: jest.fn(),
+            }
+        };
+        const rootContainer = {$w: jest.fn(() => someNativeEl), lastInstanceId: 0, instancesMap: new Map()};
+        const props = {'id': 'someId', 'style': {backgroundColor: 'red'}};
+        const instance = reconcilerDefinition.createInstance('type', props, rootContainer, {}, {});
+        // expect to have a type object
+
+        expect((someNativeEl as any).style.backgroundColor).toEqual('red');
+
+        const newProps =  {'id': 'someId'};
+        const updatePayload = reconcilerDefinition.prepareUpdate(instance, undefined, props, newProps, rootContainer, {});
+        expect(updatePayload).not.toBeNull();
+
+        reconcilerDefinition.commitUpdate!(instance, updatePayload!, undefined, props, newProps, {});
+
+        expect(someNativeEl.style.removeProperty).toBeCalledWith('backgroundColor');
+    });
+
+    it('should set backgroundColor and remove it if set to falsy value', () => {
+        const someNativeEl = {
+            style: {
+                removeProperty: jest.fn(),
+            }
+        };
+        const rootContainer = {$w: jest.fn(() => someNativeEl), lastInstanceId: 0, instancesMap: new Map()};
+        const props = {'id': 'someId', 'style': {backgroundColor: 'red'}};
+        const instance = reconcilerDefinition.createInstance('type', props, rootContainer, {}, {});
+        // expect to have a type object
+
+        expect((someNativeEl as any).style.backgroundColor).toEqual('red');
+
+        const newProps =  {'id': 'someId', 'style': {backgroundColor: undefined}};
+        const updatePayload = reconcilerDefinition.prepareUpdate(instance, undefined, props, newProps, rootContainer, {});
+        expect(updatePayload).not.toBeNull();
+
+        reconcilerDefinition.commitUpdate!(instance, updatePayload!, undefined, props, newProps, {});
+
+        expect(someNativeEl.style.removeProperty).toBeCalledWith('backgroundColor');
+    });
+
+    it('should set backgroundColor and remove it while setting borderWidth', () => {
+        const someNativeEl = {
+            style: {
+                removeProperty: jest.fn(),
+            }
+        };
+        const rootContainer = {$w: jest.fn(() => someNativeEl), lastInstanceId: 0, instancesMap: new Map()};
+        const props = {'id': 'someId', 'style': {backgroundColor: 'red'}};
+        const instance = reconcilerDefinition.createInstance('type', props, rootContainer, {}, {});
+        // expect to have a type object
+
+        expect((someNativeEl as any).style.backgroundColor).toEqual('red');
+
+        const newProps =  {'id': 'someId', style: {borderWidth: '1px'} };
+        const updatePayload = reconcilerDefinition.prepareUpdate(instance, undefined, props, newProps, rootContainer, {});
+        expect(updatePayload).not.toBeNull();
+
+        reconcilerDefinition.commitUpdate!(instance, updatePayload!, undefined, props, newProps, {});
+
+        expect(someNativeEl.style.removeProperty).toBeCalledWith('backgroundColor');
+        expect((someNativeEl as any).style.borderWidth).toEqual('1px');
+    });
 })

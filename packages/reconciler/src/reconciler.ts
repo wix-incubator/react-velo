@@ -185,39 +185,19 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       const changedKeys = Object.keys(newProps).filter(
         (key) => oldProps[key] !== newProps[key],
       );
-      if (_instance.props.style) {
-        if (newProps.style) {
-          // @ts-expect-error
-          const changedStyleKeys = Object.keys(_instance.props.style).filter(
-            // @ts-expect-error
-            (key: string) => newProps.style[key] !== _instance.props.style[key],
-          );
-          if (changedStyleKeys.length) {
-            changedKeys.push('style');
-          }
-        } else {
-          changedKeys.push('style');
-        }
-      }
 
-      if (changedKeys.length === 0) {
+      const removedKeys = Object.keys(oldProps).filter(
+        (key) => !newProps[key],
+      );
+
+      const keysNeedToApplyChange = Array.from(new Set([...changedKeys, ...removedKeys]));
+
+      if (keysNeedToApplyChange.length === 0) {
         return null;
       }
 
-      const changedProps = changedKeys.reduce((acc, key) => {
-        if (key === 'style') {
-          acc[key] = {
-            // @ts-expect-error
-            ...Object.keys(_instance.props[key] || {})
-              .map((styleKey) => ({ [styleKey]: 'rgb(255, 255, 255)' }))
-              .reduce((acc, style) => ({ ...acc, ...style }), {}), // This is a hack to make style reset work
-              // @ts-expect-error
-            ...(newProps[key] || {}),
-          };
-        } else {
-          acc[key] = newProps[key];
-        }
-
+      const changedProps = keysNeedToApplyChange.reduce((acc, key) => {
+        acc[key] = newProps[key];
         return acc;
       }, {} as any);
       log(`preapreUpdate: ${_instance.instanceId} done`);
@@ -243,17 +223,55 @@ export const reconcilerDefinition: ReconcilerDefinition = {
         );
 
         // TODO: replace with applyPropsOnObjectExcept
-        if (!EVENT_HANDLER_NAMES.includes(key)) {
-          if (key === 'children' && typeof payload[key] === 'string') {
-            log(`Should set text of ${instance.props.id}: ${payload[key]}, but we dont support that yet`);
-          } else if (key !== 'children') {
-            log(`set value of #${instance.props.id}: key "${key}" to "${payload[key]}"`);
-            // nativeEl[key] = payload[key];
-            if (typeof payload[key] === 'object' && key !== 'data') {
-              Object.assign(nativeEl[key], payload[key]);
-            } else {
-              nativeEl[key] = payload[key];
-            }
+        if (key === 'children' && typeof payload[key] === 'string') {
+          log(`Should set text of ${instance.props.id}: ${payload[key]}, but we dont support that yet`);
+        } else if (key === 'children') {
+          log(`Should se children of ${instance.props.id}: ${payload[key]}, but we dont support that yet`);
+        } else  {
+          log(`Set value of #${instance.props.id}: key "${key}" to "${payload[key]}"`);
+
+          if (EVENT_HANDLER_NAMES.includes(key)) {
+
+          } else if (key === 'style') {
+            // we can have:
+            // 1) style.prop added
+            // 2) style.prop modified
+            // 3) style.prop removed
+            // 4) style.prop set to null / undefined ( falsy )
+            // Essentially 1+2 is the same, we just set the new values to the style object and continue with our lifes.
+
+            const oldStyleProps = (oldProps.style || {}) as Record<string, string>;
+            const newStyleProps = (newProps.style || {}) as Record<string, string>;
+
+            const newPropsStylesSet = new Set(Object.keys(newStyleProps));
+            const oldPropsStylesSet = new Set(Object.keys(oldStyleProps));
+            const propDoesNotExistOnNewPropsOrIsFalsy = (prop: string) => !newPropsStylesSet.has(prop) || (newPropsStylesSet.has(prop) && !newStyleProps[prop]);
+            
+            const stylePropsRemoved = [
+              ...oldPropsStylesSet
+            ].filter((prop: string) => !newStyleProps[prop])
+            .filter(propDoesNotExistOnNewPropsOrIsFalsy);
+
+            const stylePropsChanged = [...newPropsStylesSet].filter(styleKey => oldStyleProps[styleKey] !== newStyleProps[styleKey]);
+
+
+            console.log('new / old', newProps, oldProps);
+            console.log('!!!~~~!!!', stylePropsChanged, stylePropsRemoved);
+
+            // Call Velo API to remove the props
+            stylePropsRemoved.forEach((styleProp: string) => nativeEl.style && nativeEl.style.removeProperty && nativeEl.style.removeProperty(styleProp));
+
+            // Call Velo API to set style props
+            stylePropsChanged.forEach(styleKey => {
+              console.log(nativeEl, `${styleKey} -> ${newStyleProps[styleKey]}`)
+              nativeEl.style[styleKey] = newStyleProps[styleKey];
+            });
+
+            console.log(`payload`, payload[key]);
+          } else if (typeof payload[key] === 'object') {
+            Object.assign(nativeEl[key], payload[key]);
+          } else {
+            nativeEl[key] = payload[key];
           }
         }
 
