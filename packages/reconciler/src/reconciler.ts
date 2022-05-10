@@ -254,22 +254,13 @@ export const reconcilerDefinition: ReconcilerDefinition = {
 
             const stylePropsChanged = [...newPropsStylesSet].filter(styleKey => oldStyleProps[styleKey] !== newStyleProps[styleKey]);
 
-
-            console.log('new / old', newProps, oldProps);
-            console.log('!!!~~~!!!', stylePropsChanged, stylePropsRemoved);
-
             // Call Velo API to remove the props
             stylePropsRemoved.forEach((styleProp: string) => nativeEl.style && nativeEl.style.removeProperty && nativeEl.style.removeProperty(styleProp));
 
             // Call Velo API to set style props
             stylePropsChanged.forEach(styleKey => {
-              console.log(nativeEl, `${styleKey} -> ${newStyleProps[styleKey]}`)
               nativeEl.style[styleKey] = newStyleProps[styleKey];
             });
-
-            console.log(`payload`, payload[key]);
-          } else if (typeof payload[key] === 'object') {
-            Object.assign(nativeEl[key], payload[key]);
           } else {
             nativeEl[key] = payload[key];
           }

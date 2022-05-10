@@ -12,7 +12,7 @@ interface ReactVeloReconcilerInstanceProps {
     parent: ReactVeloReconcilerInstance | null;
 }
 
-export const EVENT_HANDLER_NAMES = ['onClick', 'onKeyPress', 'onChange', 'onDblClick'];
+export const EVENT_HANDLER_NAMES = ['onClick', 'onKeyPress', 'onChange', 'onDblClick', 'onMouseIn', 'onMouseOut'];
 export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceProps {
     instanceId: string;
     type: string;
