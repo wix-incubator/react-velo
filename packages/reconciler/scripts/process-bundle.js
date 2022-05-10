@@ -14,7 +14,7 @@ function getRequireFunctionName(source) {
 }
 
 (async function main() {
-    const bundleFile = path.resolve([process.cwd(), 'dist', 'react-velo-bundle.js'].join(path.sep));
+    const bundleFile = path.resolve([process.cwd(), 'dist', process.argv[2]].join(path.sep));
     console.log(`CWD: ${process.cwd()} bundleFile: ${bundleFile}`);
 
     const bundle = await fs.readFile(bundleFile, 'utf8');
