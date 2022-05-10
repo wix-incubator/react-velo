@@ -1,5 +1,4 @@
 import type ReactType from 'react';
-import reconciler from './reconciler';
 import { getGlobal } from './utils';
 
 declare var self: any;
@@ -15,6 +14,8 @@ export function render(
   self.reactVeloGlobals = {
     ReactInstance,
   };
+  // the module is trying to access reactVeloGlobals as soon as it is initialized so needs to be delayed
+  const reconciler = require('./reconciler').default;
   // @see https://github.com/facebook/react/blob/993ca533b42756811731f6b7791ae06a35ee6b4d/packages/react-reconciler/src/ReactRootTags.js
   // I think we are a legacy root?
   const container = reconciler.createContainer(
