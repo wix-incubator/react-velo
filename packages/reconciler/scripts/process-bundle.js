@@ -8,7 +8,7 @@ function getRequireFunctionName(source) {
     const regex = /var ([a-zA-Z0-9]+)=\([a-z]=>typeof require!="undefined"\?require:typeof Proxy!="undefined"\?new Proxy/;
     const match = regex.exec(source);
     if (!match || match.length < 2) {
-        throw new Error(`Could not find require function name in source.`);
+        return undefined;
     }
     return match[1];
 }
@@ -20,10 +20,11 @@ function getRequireFunctionName(source) {
     const bundle = await fs.readFile(bundleFile, 'utf8');
     console.log(`${typeof bundle} length: ${bundle.length}`);
 
-    const requireFnName = getRequireFunctionName(bundle);
+    let requireFnName = getRequireFunctionName(bundle);
     console.log(`requireFnName: '${requireFnName}'`);
     if (!requireFnName) {
-        throw new Error('Could not find require function name');
+        console.warn('Could not find require function name, are you using cjs?');
+        requireFnName = 'require';
     }
 
     const replaceRegex = new RegExp(`${requireFnName}\\("react"\\)`, 'g');
