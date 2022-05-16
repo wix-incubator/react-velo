@@ -87,3 +87,105 @@ const App = () => {
 |-------------|--------------------|-----------------------------------------------------------------------------|
 | 	data       | Array	             | The data to be used by the repeater, similar to `$w('#TodoList').data`	     |
 | 	renderItem | (itemData) => void | The representation of each item, similarly to `$w('#TodoList').onItemReady` |
+
+
+##### Native Elements access
+
+A velo user can access "native" velo components (i.e. the object you get from `$w('#someid')`) using react's `ref` mechanism.
+For example, if you want to use some Text's `scrollTo()` method, we can do something like that:
+```es6
+let textRef;
+const setTextRef = (element) => {
+    textRef = element;
+};
+// ...
+<W.MyButton onClick={() => {
+    if (textRef) {
+        console.log('Scrolling...'); 
+        textRef.scrollTo();
+    }
+}} />
+<W.text3 text={`Selected: ${selectedColorName}`} ref={setTextRef} />
+```
+
+##### Animation
+
+Animation can be achivied using `wix-animation` as usual, simply by getting the element's native reference and creating a proper animation timeline.
+
+```es6
+import React from 'react'; // import react for JSX transpilation
+import { W, render } from '@wix/react-velo'; // import this library
+import wixAnimations from 'wix-animations'; // animations library
+
+const timeline = wixAnimations.timeline();
+const App = () => {
+	const effect = {scale: 2, duration: 200, "rotate": 360};
+	let refSet = false;
+	const setRef = (element) => {
+		if (!refSet && element) {
+			refSet = true;
+			timeline.add(element, effect);
+		}
+	};
+
+	return (<W.MyButton
+		ref={setRef} 
+		onMouseIn={() => timeline.play()}
+		onMouseOut={() => timeline.reverse()}
+	/>);
+}
+
+$w.onReady(() => render(App, $w, React));
+```
+
+Sometimes a velo user would like to compose multiple elements to a single timeline animation,
+Here is an example of how it can be achieved: 
+```es6
+// A helper function to collect the native element refs
+function createAnimation(animationOptionsArray) {
+    const timeline = wixAnimations.timeline();
+    let refsSetCounter = 0;
+    const refsArray = animationOptionsArray.map(() => null);
+
+    const applyAnimationSettings = () => {
+        if (refsSetCounter < animationOptionsArray.length) {
+            return;
+        }
+
+        animationOptionsArray.forEach((animationOptions, idx) => {
+            timeline.add(refsArray[idx], animationOptions);
+        });
+    };
+
+    return {
+        timeline,
+        setRefs: animationOptionsArray.map((_, idx) => (el) => {
+            if (!refsArray[idx] && el) {
+                refsSetCounter++;
+                refsArray[idx] = el;
+                applyAnimationSettings();
+            }
+        })
+    };
+}
+// ...
+// Usage:
+const animation = createAnimation([
+    {scale: 0.8, duration: 200},
+    {opacity: 1, duration: 100},
+    {opacity: 0, duration: 10},
+]);
+const onMouseIn = () => animation.timeline.play();
+const onMouseOut = () => animation.timeline.reverse();
+/// ...
+return (<W.container1 onClick={onClick}>
+       <W.mainColor
+            ref={animation.setRefs[0]} 
+            style={{backgroundColor: props.color}} 
+            onMouseIn={onMouseIn} 
+            onMouseOut={onMouseOut}>
+        </W.mainColor>
+        <W.blackBorder ref={animation.setRefs[1]} />
+        <W.emptyBorder ref={animation.setRefs[2]} />
+</W.container1>);
+```
