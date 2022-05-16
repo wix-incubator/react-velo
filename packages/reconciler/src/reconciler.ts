@@ -1,6 +1,6 @@
 import reactReconciler from 'react-reconciler';
 import { safeJsonStringify, applyPropsOnObjectExcept, getGlobal } from './utils';
-import { EVENT_HANDLER_NAMES, ReactVeloReconcilerInstance } from './reconciler-instance';
+import { ReactVeloReconcilerInstance } from './reconciler-instance';
 
 const rootHostContext = {
   type: 'root-host-context',
@@ -230,7 +230,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
         } else  {
           log(`Set value of #${instance.props.id}: key "${key}" to "${payload[key]}"`);
 
-          if (EVENT_HANDLER_NAMES.includes(key)) {
+          if (instance.getEventHandlerNames().includes(key)) {
 
           } else if (key === 'style') {
             // we can have:

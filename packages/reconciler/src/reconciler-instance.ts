@@ -12,7 +12,13 @@ interface ReactVeloReconcilerInstanceProps {
     parent: ReactVeloReconcilerInstance | null;
 }
 
-export const EVENT_HANDLER_NAMES = ['onClick', 'onKeyPress', 'onChange', 'onDblClick', 'onMouseIn', 'onMouseOut'];
+
+function getEventHandlerNames(wElement: any) {
+  const keys = Object.keys(wElement);
+  const eventHandlers = keys.filter(key => key.startsWith('on'));
+  return eventHandlers;
+}
+
 export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceProps {
     instanceId: string;
     type: string;
@@ -94,10 +100,11 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
     installEventHandlers() {
         const nativeElToInstallOn = this.getNativeEl();
         const identifier = this.getIdentifier();
+        const eventHandlerNames = getEventHandlerNames(nativeElToInstallOn);
         this._log(
-          `Installing event handlers (${EVENT_HANDLER_NAMES.join(',')}) on instanceId: ${this.instanceId} propId: ${identifier}`,
+          `Installing event handlers (${eventHandlerNames.join(',')}) on instanceId: ${this.instanceId} propId: ${identifier}`,
         );
-        EVENT_HANDLER_NAMES.forEach((eventName) => {
+        eventHandlerNames.forEach((eventName) => {
           const eventHandlerSetter = nativeElToInstallOn[eventName];
           if (typeof eventHandlerSetter !== 'function') {
             return;
@@ -129,10 +136,15 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
     applyPropsOnNativeEl() {
         if (this.getNativeEl()) {
             const identifier = this.getIdentifier();
-            const unsettablePropNames = ['id', 'children', ...EVENT_HANDLER_NAMES];
+            const eventHandlerNames = getEventHandlerNames(this.getNativeEl());
+            const unsettablePropNames = ['id', 'children', ...eventHandlerNames];
             this._log(`Setting props ${safeJsonStringify(this.props)} on nativeEl #${identifier}`);
             applyPropsOnObjectExcept(this.getNativeEl(), this.props, unsettablePropNames);
         }
+    }
+
+    getEventHandlerNames() {
+      return getEventHandlerNames(this.getNativeEl());
     }
 
     setRelative$w(relative$w: any) {
