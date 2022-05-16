@@ -2,7 +2,6 @@
 /// <reference path="/types/pages/$w.d.ts" />
 
 /// Generic helpers
-import type { React } from 'react';
 type ExtractNameFromStringWithHash<StringWithHash extends string> =
     StringWithHash extends `#${infer Name}` ? Name : never;
 
@@ -47,7 +46,7 @@ type Subset<K> = {
     [attr in keyof K]?: Subset<K[attr]>;
 };
 
-export type ReactVeloOutputElementsMap = {
+type ReactVeloOutputElementsMap = {
     [key in PageElementIds]: ReactVeloElementsMap<key> extends $w.Repeater ? (props: ReactVeloRepeaterType) => ReactVeloJsxElement : (props: ReactWixElement<key>) => ReactVeloJsxElement;
 }
 
@@ -58,7 +57,7 @@ interface ReactVeloJsxElement extends JSX.Element {
     readonly children?: (ReactVeloOutputTypesMap[keyof ReactVeloOutputTypesMap])[];
 }
 
-export type ReactVeloOutputTypesMap = {
+type ReactVeloOutputTypesMap = {
     [key in VeloTypeNames as Uncapitalize<key>]: TypeNameToSdkType[key] extends $w.Repeater ? (prop: ReactVeloRepeaterType) => ReactVeloJsxElement : (prop: ReactifiedVeloType<TypeNameToSdkType[key]>) => ReactVeloJsxElement
 }
 
@@ -81,7 +80,7 @@ declare module '@wix/react-velo' {
     export function render(
         rootElement: JSX.Element,
         $w: Function,
-        react: typeof React,
+        react: any,
         callback?: Function
     ): void;
     export const W: ReactVeloOutputElementsMap;
