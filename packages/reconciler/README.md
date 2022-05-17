@@ -93,7 +93,7 @@ const App = () => {
 
 A velo user can access "native" velo components (i.e. the object you get from `$w('#someid')`) using react's `ref` mechanism.
 For example, if you want to use some Text's `scrollTo()` method, we can do something like that:
-```es6
+```javascript
 let textRef;
 const setTextRef = (element) => {
     textRef = element;
@@ -112,7 +112,7 @@ const setTextRef = (element) => {
 
 Animation can be achivied using `wix-animation` as usual, simply by getting the element's native reference and creating a proper animation timeline.
 
-```es6
+```javascript
 import React from 'react'; // import react for JSX transpilation
 import { W, render } from '@wix/react-velo'; // import this library
 import wixAnimations from 'wix-animations'; // animations library
@@ -140,7 +140,7 @@ $w.onReady(() => render(App, $w, React));
 
 Sometimes a velo user would like to compose multiple elements to a single timeline animation,
 Here is an example of how it can be achieved: 
-```es6
+```javascript
 // A helper function to collect the native element refs
 function createAnimation(animationOptionsArray) {
     const timeline = wixAnimations.timeline();
