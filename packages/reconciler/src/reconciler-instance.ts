@@ -19,6 +19,15 @@ function getEventHandlerNames(wElement: any) {
   return eventHandlers;
 }
 
+function getInverseAction(action: 'hide' | 'show'): 'show' | 'hide' {
+  switch (action) {
+    case 'hide':
+      return 'show'
+    case 'show':
+      return 'hide';
+  }
+}
+
 export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceProps {
     instanceId: string;
     type: string;
@@ -79,8 +88,10 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
       const nativeEl = this.getNativeEl();
       const identifier = this.getIdentifier();
       if (nativeEl) {
-        if (typeof nativeEl[action] === 'function') {
+        const inverseAction = getInverseAction(action);
+        if (typeof nativeEl[action] === 'function' && typeof nativeEl[inverseAction] === 'function') {
           this._log(`innerToggleVisibility ${action} for instanceId: ${this.instanceId} propId: ${identifier}`);
+          nativeEl[inverseAction]();
           nativeEl[action]();
         } else {
           console.log(`Warning: ${action}() is not defined for #${identifier} ${typeof this.props.id}}`);

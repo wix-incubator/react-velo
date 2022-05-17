@@ -23,6 +23,7 @@ function getRelative$wFromParentRepeaterItemContext(internalHandle: any) {
     parent = parent.return;
   }
 
+  console.warn('Unable to find parent with repeaterContext.relative$w!');
   return null;
 }
 
@@ -155,8 +156,13 @@ export const reconcilerDefinition: ReconcilerDefinition = {
 
       // @ts-expect-error
       instance.getNativeEl().onItemReady(($item, props) => {
-        log(`#${instance.props.id} (${instance.instanceId}) props._id: ${props._id} ready`);
+        log(`Repeater item #${instance.props.id} (${instance.instanceId}) props._id: ${props._id} READY`);
         (instance.props as any).onReadyItemId(props._id, { relative$w: $item });
+      });
+
+      instance.getNativeEl().onItemRemoved((props: any) => {
+        log(`Repeater item #${instance.props.id} props._id: ${props._id} REMOVED`);
+        (instance.props as any).onRemovedItemId(props._id);
       });
 
       log(`#${instance.props.id} ${instance.instanceId} repeater data = []`);
@@ -228,7 +234,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
         } else if (key === 'children') {
           log(`Should se children of ${instance.props.id}: ${payload[key]}, but we dont support that yet`);
         } else  {
-          log(`Set value of #${instance.props.id}: key "${key}" to "${payload[key]}"`);
+          log(`Set value of #${instance.props.id}: key "${key}" to "${safeJsonStringify(payload[key])}"`);
 
           if (instance.getEventHandlerNames().includes(key)) {
 

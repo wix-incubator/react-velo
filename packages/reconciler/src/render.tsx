@@ -53,10 +53,24 @@ const RepeaterWrapper = (props: any) => {
   return ReactInstance!.createElement('repeater', {
     id: props.id,
     onReadyItemId: (itemId: any, repeaterContext: any) => {
-      setReady(Object.assign(Object.assign({}, ready), { [itemId]: repeaterContext }))
+      setReady({ 
+        ...ready,
+        [itemId]: repeaterContext
+      });
+    },
+    onRemovedItemId: (itemId: any) => {
+      setReady({ 
+        ...ready,
+        [itemId]: undefined,
+      });
     },
     data: props.data,
-  }, props.data.map((item: {_id: string}) => typeof (ready as any)[item._id] !== 'undefined' ? ReactInstance!.createElement('repeater-item', { key: item._id, repeaterContext: (ready as any)[item._id] }, props.renderItem(item)) : null));
+  }, props.data.map((item: {_id: string}) => {
+    if (typeof (ready as any)[item._id] !== 'undefined') {
+      return ReactInstance!.createElement('repeater-item', { key: item._id, repeaterContext: (ready as any)[item._id] }, props.renderItem(item));
+    }
+    return null;
+  }));
 };
 
 function reactVeloComponentFactory(componentName: string, componentCache: Map<string, Function>) {
