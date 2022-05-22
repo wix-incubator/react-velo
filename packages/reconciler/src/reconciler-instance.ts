@@ -19,12 +19,17 @@ function getEventHandlerNames(wElement: any) {
   return eventHandlers;
 }
 
-function getInverseAction(action: 'hide' | 'show'): 'show' | 'hide' {
+type VeloVisibilityAction = 'hide' | 'show' | 'expand' | 'collapse';
+function getInverseAction(action: VeloVisibilityAction): VeloVisibilityAction {
   switch (action) {
     case 'hide':
       return 'show'
     case 'show':
       return 'hide';
+    case 'collapse':
+      return 'expand';
+    case 'expand':
+      return 'collapse';
   }
 }
 
@@ -84,7 +89,7 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
         return this._nativeEl;
     }
 
-    toggleNativeInstanceVisibility(action: 'show' | 'hide') {
+    toggleNativeInstanceVisibility(action: VeloVisibilityAction) {
       const nativeEl = this.getNativeEl();
       const identifier = this.getIdentifier();
       if (nativeEl) {
@@ -101,7 +106,7 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
       }
     }
 
-    toggleVisibility(action: 'show' | 'hide') {
+    toggleVisibility(action: VeloVisibilityAction) {
         const identifier = this.getIdentifier();
         this._log(`toggleVisibility ${action} for instanceId: ${this.instanceId} propId: ${identifier}`);
         this.toggleNativeInstanceVisibility(action);
@@ -151,7 +156,16 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
             const unsettablePropNames = ['id', 'children', ...eventHandlerNames];
             this._log(`Setting props ${safeJsonStringify(this.props)} on nativeEl #${identifier}`);
             applyPropsOnObjectExcept(this.getNativeEl(), this.props, unsettablePropNames);
+            this.applyVirtualPropsOnNativeEl();
         }
+    }
+
+    applyVirtualPropsOnNativeEl() {
+      if (this.getNativeEl()) {
+        if (typeof this.props['hidden'] !== 'undefined') {
+          this.props['hidden'] ? this.getNativeEl().hide() : this.getNativeEl().show();
+        }
+      }
     }
 
     getEventHandlerNames() {

@@ -35,12 +35,10 @@ Since `importScript` does not support types declaration (via the types bundler),
 Types added/changed in `types/index.d.ts` would not be reflected in `serve` mode,
 In order to test types related definitions, **do not** use `importScript` but rather run:
 * `yarn serve:types`
-* Open the editor for the relevant site
+* Open the editor for the relevant site that uses `import { ... } from '@wix/react-velo';`
 * Check in the network the version of react-velo currently used (in the network tab in dev tools)
 * After each local modification to `index.d.ts` do:
-  * Run in the console (in this example `react-velo.1.0.20` is used : `fetch('http://localhost:9081/index.d.ts', {
-    mode: 'no-cors'
-    }).then(res => res.text()).then(JSON.stringify).then(content => {
+  * Run in the console (in this example `react-velo.1.0.20` is used : `fetch('http://localhost:9081/index.d.ts').then(res => res.text()).then(content => {
     monaco.languages.typescript.javascriptDefaults.addExtraLib(content, '/dependencies/@wix/react-velo.1.0.20.d.ts');
     console.log('DONE');
     })`

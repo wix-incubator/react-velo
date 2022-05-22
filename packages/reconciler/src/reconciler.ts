@@ -1,5 +1,5 @@
 import reactReconciler from 'react-reconciler';
-import { safeJsonStringify, applyPropsOnObjectExcept, getGlobal } from './utils';
+import { safeJsonStringify, getGlobal } from './utils';
 import { ReactVeloReconcilerInstance } from './reconciler-instance';
 
 const rootHostContext = {
@@ -54,6 +54,13 @@ unknown,
 unknown,
 // notimeout
 unknown>;
+
+const ExpandCollapseVisibilityStrategy = {
+  SHOW: 'expand',
+  HIDE: 'collapse',
+};
+
+const VisibilityStrategy = ExpandCollapseVisibilityStrategy;
 
 export const reconcilerDefinition: ReconcilerDefinition = {
   now: Date.now,
@@ -238,6 +245,12 @@ export const reconcilerDefinition: ReconcilerDefinition = {
 
           if (instance.getEventHandlerNames().includes(key)) {
 
+          } if (key === 'hidden') {
+            if (newProps[key] === true) {
+              nativeEl.hide();
+            } else if (newProps[key] === false) {
+              nativeEl.show();
+            }
           } else if (key === 'style') {
             // we can have:
             // 1) style.prop added
@@ -288,7 +301,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     log(
       `appendChildToContainer(container: #${container.id}, child: #${child.props.id} (${child.instanceId}))`,
     );
-    child.toggleVisibility('show');
+    child.toggleVisibility(VisibilityStrategy.SHOW);
     //child.parent = container; dunno, parent is supposed to be ReactVeloReconcilerInstance
     container.children.push(child);
   },
@@ -301,14 +314,14 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       container.children.splice(index, 0, child);
       //child.parent = container; dunno, parent is supposed to be ReactVeloReconcilerInstance
     }
-    child.toggleVisibility('show');
+    child.toggleVisibility(VisibilityStrategy.SHOW);
   },
   removeChildFromContainer(container, child) {
     log(
       `removeChildFromContainer(container: #${container.id}, child: #${child.props.id} (${child.instanceId}))`,
     );
     child.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => currentInstance.setIgnoreEvents());
-    child.toggleVisibility('hide');
+    child.toggleVisibility(VisibilityStrategy.HIDE);
   },
   clearContainer(container) {
     container.children.forEach((child: ReactVeloReconcilerInstance) => {
@@ -326,7 +339,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     parent.children.push(child);
     child.parent = parent;
 
-    child.toggleVisibility('show');
+    child.toggleVisibility(VisibilityStrategy.SHOW);
   },
   appendChild(parent, child) {
     log(
@@ -334,7 +347,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     );
     parent.children.push(child);
     child.parent = parent;
-    child.toggleVisibility('show');
+    child.toggleVisibility(VisibilityStrategy.SHOW);
   },
   insertBefore(parent, newChild, beforeChild) {
     log(`insertBefore(${parent.type}${parent.props.id}, ${newChild.type}#${newChild.props.id}, ${beforeChild.type}#${beforeChild.props.id})`);
@@ -342,7 +355,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
 
     newChild.parent = parent;
     newChild.relative$w = parent.relative$w;
-    newChild.toggleVisibility('show');
+    newChild.toggleVisibility(VisibilityStrategy.SHOW);
   },
   removeChild(parent, child) {
     log(
@@ -350,7 +363,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     );
     
     child.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => currentInstance.setIgnoreEvents());
-    child.toggleVisibility('hide');
+    child.toggleVisibility(VisibilityStrategy.HIDE);
   },
 
   // Unknown
