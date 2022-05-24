@@ -67,7 +67,7 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
       }
     }
 
-    private getIdentifier = () => this.props.id || this.type;
+    getIdentifier = () => this.props.id || this.type;
 
     getNativeEl() {
         if (this._nativeEl) {
@@ -127,17 +127,18 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
           }
 
           const self = this;
+          this._log(`Installing event handler for eventName: ${eventName}`);
           eventHandlerSetter.call(nativeElToInstallOn, function (...args: any[]) {
             // there's no native way to remove event handler from wix element
             if (self._ignoreEvents) {
-                self._log(
-                `Ignoring event for ${self.instanceId} eventName: ${eventName}`,
+              self._log(
+                `Ignoring event for #${identifier} instanceId: ${self.instanceId} eventName: ${eventName}`,
               );
               return;
             }
 
             if (typeof self.props[eventName] === 'function') {
-               self._log(`Calling ${eventName} handler on #${self.props.id} instanceId: ${self.instanceId}...`);
+              self._log(`Calling ${eventName} handler on #${identifier} native id: ${nativeElToInstallOn.id} instanceId: ${self.instanceId}...`);
               //@ts-expect-error
               return self.props[eventName](...args);
             }

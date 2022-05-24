@@ -153,7 +153,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
 
     rootContainer.instancesMap.set(instance.instanceId, instance);
     log(
-      `createInstance() instanceId: ${instance.instanceId} for type: ${type} propsId: ${instance.props.id} hostContext: ${safeJsonStringify(hostContext)}`,
+      `createInstance() instanceId: ${instance.instanceId} for type: ${type} propsId: ${instance.getIdentifier()} hostContext: ${safeJsonStringify(hostContext)}`,
     );
 
     instance.applyPropsOnNativeEl();
@@ -163,16 +163,16 @@ export const reconcilerDefinition: ReconcilerDefinition = {
 
       // @ts-expect-error
       instance.getNativeEl().onItemReady(($item, props) => {
-        log(`Repeater item #${instance.props.id} (${instance.instanceId}) props._id: ${props._id} READY`);
+        log(`Repeater item #${instance.getIdentifier()} (${instance.instanceId}) props._id: ${props._id} READY`);
         (instance.props as any).onReadyItemId(props._id, { relative$w: $item });
       });
 
       instance.getNativeEl().onItemRemoved((props: any) => {
-        log(`Repeater item #${instance.props.id} props._id: ${props._id} REMOVED`);
+        log(`Repeater item #${instance.getIdentifier()} props._id: ${props._id} REMOVED`);
         (instance.props as any).onRemovedItemId(props._id);
       });
 
-      log(`#${instance.props.id} ${instance.instanceId} repeater data = []`);
+      log(`#${instance.getIdentifier()} ${instance.instanceId} repeater data = []`);
       if (Array.isArray(instance.props.data)) {
         instance.getNativeEl().data = instance.props.data;
       } else {
@@ -220,11 +220,11 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     return null;
   },
   commitUpdate(instance, payload, type, oldProps, newProps) {
-    log(`Commiting update #${instance.props.id}`);
+    log(`Commiting update #${instance.getIdentifier()}`);
     const nativeEl = instance.getNativeEl();
     if (!nativeEl) {
       console.log(
-        `Warning: ${instance.instanceId} did not locate element of props id: ${instance.props.id}, bailing out`,
+        `Warning: ${instance.instanceId} did not locate element of props id: ${instance.getIdentifier()}, bailing out`,
       );
       return;
     }
@@ -237,15 +237,15 @@ export const reconcilerDefinition: ReconcilerDefinition = {
 
         // TODO: replace with applyPropsOnObjectExcept
         if (key === 'children' && typeof payload[key] === 'string') {
-          log(`Should set text of ${instance.props.id}: ${payload[key]}, but we dont support that yet`);
+          log(`Should set text of ${instance.getIdentifier()}: ${payload[key]}, but we dont support that yet`);
         } else if (key === 'children') {
-          log(`Should se children of ${instance.props.id}: ${payload[key]}, but we dont support that yet`);
+          log(`Should se children of ${instance.getIdentifier()}: ${payload[key]}, but we dont support that yet`);
+        } if (instance.getEventHandlerNames().includes(key)) {
+          log(`Skipping ${key} on #${instance.getIdentifier()} because it's an event handler.`);
         } else  {
-          log(`Set value of #${instance.props.id}: key "${key}" to "${safeJsonStringify(payload[key])}"`);
+          log(`Set value of #${instance.getIdentifier()}: key "${key}" to "${safeJsonStringify(payload[key])}"`);
 
-          if (instance.getEventHandlerNames().includes(key)) {
-
-          } if (key === 'hidden') {
+          if (key === 'hidden') {
             if (newProps[key] === true) {
               nativeEl.hide();
             } else if (newProps[key] === false) {
@@ -281,6 +281,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
               nativeEl.style[styleKey] = newStyleProps[styleKey];
             });
           } else {
+            log(`Seting value of ${key} on native element #${instance.getIdentifier()}`);
             nativeEl[key] = payload[key];
           }
         }
@@ -292,14 +293,14 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     }
 
     log(
-      `commitUpdate() done for ${instance.props.id} on ${instance.instanceId}`,
+      `commitUpdate() done for ${instance.getIdentifier()} on ${instance.instanceId}`,
     );
   },
 
   // Update root
   appendChildToContainer(container, child) {
     log(
-      `appendChildToContainer(container: #${container.id}, child: #${child.props.id} (${child.instanceId}))`,
+      `appendChildToContainer(container: #${container.id}, child: #${child.getIdentifier()} (${child.instanceId}))`,
     );
     child.toggleVisibility(VisibilityStrategy.SHOW);
     //child.parent = container; dunno, parent is supposed to be ReactVeloReconcilerInstance
@@ -307,7 +308,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   },
   insertInContainerBefore(container, child, beforeChild) {
     log(
-      `insertInContainerBefore(container: #${container.id}, child: #${child.props.id} (${child.instanceId}), beforeChild: #${beforeChild.props.id} (${beforeChild.instanceId}))`,
+      `insertInContainerBefore(container: #${container.id}, child: #${child.getIdentifier()} (${child.instanceId}), beforeChild: #${beforeChild.getIdentifier()} (${beforeChild.instanceId}))`,
     );
     const index = container.children.indexOf(beforeChild);
     if (index > -1) {
@@ -318,7 +319,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   },
   removeChildFromContainer(container, child) {
     log(
-      `removeChildFromContainer(container: #${container.id}, child: #${child.props.id} (${child.instanceId}))`,
+      `removeChildFromContainer(container: #${container.id}, child: #${child.getIdentifier()} (${child.instanceId}))`,
     );
     child.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => currentInstance.setIgnoreEvents());
     child.toggleVisibility(VisibilityStrategy.HIDE);
@@ -334,7 +335,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   // Update children
   appendInitialChild(parent, child) {
     log(
-      `appendInitialChild(parent: #${parent.props.id} (${parent.instanceId}), child: #${child.props.id} (${child.instanceId}))`,
+      `appendInitialChild(parent: #${parent.getIdentifier()} (${parent.instanceId}), child: #${child.getIdentifier()} (${child.instanceId}))`,
     );
     parent.children.push(child);
     child.parent = parent;
@@ -343,14 +344,14 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   },
   appendChild(parent, child) {
     log(
-      `appendChild(parent: #${parent.props.id} (${parent.instanceId}), child: #${child.props.id} (${child.instanceId}))`,
+      `appendChild(parent: #${parent.getIdentifier()} (${parent.instanceId}), child: #${child.getIdentifier()} (${child.instanceId}))`,
     );
     parent.children.push(child);
     child.parent = parent;
     child.toggleVisibility(VisibilityStrategy.SHOW);
   },
   insertBefore(parent, newChild, beforeChild) {
-    log(`insertBefore(${parent.type}${parent.props.id}, ${newChild.type}#${newChild.props.id}, ${beforeChild.type}#${beforeChild.props.id})`);
+    log(`insertBefore(${parent.type}${parent.getIdentifier()}, ${newChild.type}#${newChild.getIdentifier()}, ${beforeChild.type}#${beforeChild.getIdentifier()})`);
     parent.children.splice(parent.children.indexOf(beforeChild), 0, newChild);
 
     newChild.parent = parent;
@@ -359,7 +360,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   },
   removeChild(parent, child) {
     log(
-      `removeChild({ props.id: #${parent.props.id}, instanceId: ${parent.instanceId}, type: ${parent.type} }, { props.id: #${child.props.id}, instanceId: ${child.instanceId}, type: ${child.type} })`,
+      `removeChild({ props.id: #${parent.getIdentifier()}, instanceId: ${parent.instanceId}, type: ${parent.type} }, { props.id: #${child.getIdentifier()}, instanceId: ${child.instanceId}, type: ${child.type} })`,
     );
     
     child.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => currentInstance.setIgnoreEvents());
@@ -375,7 +376,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   },
   getPublicInstance(instance: ReactVeloReconcilerInstance) {
     log(
-      `getPublicInstance({ instance: #${instance.props.id}, instanceId: ${instance.instanceId} })`,
+      `getPublicInstance({ instance: #${instance.getIdentifier()}, instanceId: ${instance.instanceId} })`,
     );
     return instance.getNativeEl();
   },

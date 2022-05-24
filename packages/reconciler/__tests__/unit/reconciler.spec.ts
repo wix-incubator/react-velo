@@ -67,7 +67,7 @@ describe('events handler', () => {
         expect(firstInstance.relative$w).toEqual(rootContainer.$w);
         expect(rootContainer.instancesMap.get(firstInstance.instanceId)).toEqual(firstInstance);
 
-        reconcilerDefinition.removeChild!({ props: { id: 'bla' } } as any, firstInstance);
+        reconcilerDefinition.removeChild!({ props: { id: 'bla' }, getIdentifier: () => 'dummy' } as any, firstInstance);
 
         const secondnstanceClickHandler = jest.fn();
         const secondInstance = reconcilerDefinition.createInstance('type', {'id': 'someId', onClick: secondnstanceClickHandler}, rootContainer, {}, {});
