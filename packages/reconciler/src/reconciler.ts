@@ -240,8 +240,10 @@ export const reconcilerDefinition: ReconcilerDefinition = {
           log(`Should set text of ${instance.getIdentifier()}: ${payload[key]}, but we dont support that yet`);
         } else if (key === 'children') {
           log(`Should se children of ${instance.getIdentifier()}: ${payload[key]}, but we dont support that yet`);
-        } if (instance.getEventHandlerNames().includes(key)) {
-          log(`Skipping ${key} on #${instance.getIdentifier()} because it's an event handler.`);
+        } if (instance.getEventHandlerNames().includes(key) && type !== 'repeater') {
+          log(`Modifying ${key} on #${instance.getIdentifier()} ${type} via removeEventHandler because it's an event handler.`);
+          nativeEl.removeEventHandler(key, oldProps[key]);
+          nativeEl[key](payload[key]);
         } else  {
           log(`Set value of #${instance.getIdentifier()}: key "${key}" to "${safeJsonStringify(payload[key])}"`);
 
@@ -321,7 +323,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
     log(
       `removeChildFromContainer(container: #${container.id}, child: #${child.getIdentifier()} (${child.instanceId}))`,
     );
-    child.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => currentInstance.setIgnoreEvents());
+    child.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => currentInstance.removeEventHandlers());
     child.toggleVisibility(VisibilityStrategy.HIDE);
   },
   clearContainer(container) {
@@ -363,7 +365,7 @@ export const reconcilerDefinition: ReconcilerDefinition = {
       `removeChild({ props.id: #${parent.getIdentifier()}, instanceId: ${parent.instanceId}, type: ${parent.type} }, { props.id: #${child.getIdentifier()}, instanceId: ${child.instanceId}, type: ${child.type} })`,
     );
     
-    child.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => currentInstance.setIgnoreEvents());
+    child.applyFunctionOnChildrenAndSelf((currentInstance: ReactVeloReconcilerInstance) => currentInstance.removeEventHandlers());
     child.toggleVisibility(VisibilityStrategy.HIDE);
   },
 

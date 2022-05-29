@@ -113,41 +113,26 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
         this.children.map(child => child.toggleVisibility(action));
     }
 
+    applyOnExistingEvents(fn: (eventName: string, nativeEl: any) => void) {
+      const nativeElToInstallOn = this.getNativeEl();
+      const eventHandlerNames = getEventHandlerNames(nativeElToInstallOn);
+      const existingEvents = eventHandlerNames.filter(nativeEventName => typeof this.props[nativeEventName] === 'function');
+      this._log(
+        `Applying on existingEvents: (${existingEvents.join(',')}) on instanceId: ${this.instanceId} identifier: ${this.getIdentifier()}`,
+      );
+      existingEvents.forEach(eventName => fn(eventName, nativeElToInstallOn));
+    }
+
     installEventHandlers() {
-        const nativeElToInstallOn = this.getNativeEl();
-        const identifier = this.getIdentifier();
-        const eventHandlerNames = getEventHandlerNames(nativeElToInstallOn);
-        this._log(
-          `Installing event handlers (${eventHandlerNames.join(',')}) on instanceId: ${this.instanceId} propId: ${identifier}`,
-        );
-        eventHandlerNames.forEach((eventName) => {
-          const eventHandlerSetter = nativeElToInstallOn[eventName];
-          if (typeof eventHandlerSetter !== 'function') {
-            return;
-          }
-
-          const self = this;
-          this._log(`Installing event handler for eventName: ${eventName}`);
-          eventHandlerSetter.call(nativeElToInstallOn, function (...args: any[]) {
-            // there's no native way to remove event handler from wix element
-            if (self._ignoreEvents) {
-              self._log(
-                `Ignoring event for #${identifier} instanceId: ${self.instanceId} eventName: ${eventName}`,
-              );
-              return;
-            }
-
-            if (typeof self.props[eventName] === 'function') {
-              self._log(`Calling ${eventName} handler on #${identifier} native id: ${nativeElToInstallOn.id} instanceId: ${self.instanceId}...`);
-              //@ts-expect-error
-              return self.props[eventName](...args);
-            }
-          });
+        this.applyOnExistingEvents((eventName, nativeElToInstallOn) => {
+          nativeElToInstallOn[eventName](this.props[eventName]);
         });
     }
 
-    setIgnoreEvents() {
-        this._ignoreEvents = true;
+    removeEventHandlers() {
+        this.applyOnExistingEvents((eventName, nativeElToRemoveFrom) => {
+          nativeElToRemoveFrom.removeEventHandler(eventName, this.props[eventName]);
+        });
     }
 
     applyPropsOnNativeEl() {

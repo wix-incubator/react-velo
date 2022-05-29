@@ -28,6 +28,14 @@ describe('events handler', () => {
         const clickHandlers: Function[] = [];
         const someNativeEl = {
             onClick: (cb: Function) => clickHandlers.push(cb),
+            removeEventHandler: (eventName: string, cb: Function) => {
+                if (eventName === 'onClick') {
+                    const indexOfCb = clickHandlers.findIndex(handler => cb === handler);
+                    if (indexOfCb > -1) {
+                        clickHandlers.splice(indexOfCb, 1);
+                    }
+                }
+            }
         };
         const rootContainer = {$w: jest.fn(() => someNativeEl), lastInstanceId: 0, instancesMap: new Map()};
         const firstInstanceClickHandler = jest.fn();
@@ -57,6 +65,14 @@ describe('events handler', () => {
         const clickHandlers: Function[] = [];
         const someNativeEl = {
             onClick: (cb: Function) => clickHandlers.push(cb),
+            removeEventHandler: (eventName: string, cb: Function) => {
+                if (eventName === 'onClick') {
+                    const indexOfCb = clickHandlers.findIndex(handler => cb === handler);
+                    if (indexOfCb > -1) {
+                        clickHandlers.splice(indexOfCb, 1);
+                    }
+                }
+            }
         };
         const rootContainer = {$w: jest.fn(() => someNativeEl), lastInstanceId: 0, instancesMap: new Map()};
         const firstInstanceClickHandler = jest.fn();
