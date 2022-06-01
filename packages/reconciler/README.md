@@ -61,22 +61,29 @@ Given A following page with a repeater
 
 It's React implementation can be controlled using the following code
 ```javascript
-const App = () => {
-    const [todos, setTodos] = useState([{
-        desciption: 'Item 1',
-        status: 'In Progress',
-    }, {
-        desciption: 'Item 2',
-        status: 'Done',
-    }]);
-    // Actions to control the list can be added
-    return <W.TodoList data={todos} renderItem={({ description, status }) => (
-        <>
-            <W.Description text={description}/>
-            <W.Status text={status}/>
-        </>
-    )}/>
+import React, { useState } from 'react';
+import { render, W } from '@wix/react-velo';
+
+function App() {
+  const [todos, setTodos] = useState([{
+    desciption: 'Item 1',
+    status: 'In Progress',
+  }, {
+    desciption: 'Item 2',
+    status: 'Done',
+  }]);
+  // Actions to control the list can be added
+  return <W.TodoList data={todos} renderItem={({ description, status }) => 
+    (
+      <>
+        <W.Description text={description}/>
+        <W.Status text={status}/>
+      </>
+    )
+  }/>;
 }
+
+$w.onReady(() => render(App, $w, React));
 ```
 ##### Repeater Component API
 
