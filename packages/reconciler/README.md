@@ -66,10 +66,12 @@ import { render, W } from '@wix/react-velo';
 
 function App() {
   const [todos, setTodos] = useState([{
-    desciption: 'Item 1',
+    _id: '1',
+    description: 'Item 1',
     status: 'In Progress',
   }, {
-    desciption: 'Item 2',
+    _id: '2',
+    description: 'Item 2',
     status: 'Done',
   }]);
   // Actions to control the list can be added
