@@ -7,6 +7,7 @@ This module is aimed to be used in Wix Velo environment.
 1. Open a Wix Site
 2. Enable Dev Mode
 3. Add `@wix/react-velo` npm module
+4. Add `react` npm module
 
 ![velo-sources-panel.png](docs/assets/velo-sources-panel.png)
 
@@ -20,21 +21,17 @@ A Velo User can control these elements the behavior, style and content using the
 import React, { useState } from 'react';
 import { render, W } from '@wix/react-velo';
 
-const App = () => {
-	const [background, setBackground] = useState('green');
-	return (
-		<>
-			<W.myContainer style={{backgroundColor: background}}>
-				<W.title text={'Click to change background'} />
-				<W.okButton onClick={() => setBackground('Red')} />
-			</W.myContainer>
-		</>
-	)
+function App() {
+  const [background, setBackground] = useState('green');
+  return (
+    <W.myContainer style={{backgroundColor: background}}>
+      <W.title text={'Click to change background'} />
+      <W.okButton onClick={() => setBackground('red')} />
+    </W.myContainer>
+  );
 }
 
-$w.onReady(function () {
-	render(App, $w, React);
-});
+$w.onReady(() => render(App, $w, React));
 ```
 
 ## API
@@ -118,21 +115,23 @@ import { W, render } from '@wix/react-velo'; // import this library
 import wixAnimations from 'wix-animations'; // animations library
 
 const timeline = wixAnimations.timeline();
-const App = () => {
-	const effect = {scale: 2, duration: 200, "rotate": 360};
-	let refSet = false;
-	const setRef = (element) => {
-		if (!refSet && element) {
-			refSet = true;
-			timeline.add(element, effect);
-		}
-	};
+function App() {
+  const effect = {scale: 2, duration: 200, "rotate": 360};
+  let refSet = false;
+  const setRef = (element) => {
+    if (!refSet && element) {
+      refSet = true;
+      timeline.add(element, effect);
+    }
+  };
 
-	return (<W.MyButton
-		ref={setRef} 
-		onMouseIn={() => timeline.play()}
-		onMouseOut={() => timeline.reverse()}
-	/>);
+  return (
+    <W.MyButton
+      ref={setRef} 
+      onMouseIn={() => timeline.play()}
+      onMouseOut={() => timeline.reverse()}
+    />
+  );
 }
 
 $w.onReady(() => render(App, $w, React));
@@ -143,49 +142,51 @@ Here is an example of how it can be achieved:
 ```javascript
 // A helper function to collect the native element refs
 function createAnimation(animationOptionsArray) {
-    const timeline = wixAnimations.timeline();
-    let refsSetCounter = 0;
-    const refsArray = animationOptionsArray.map(() => null);
+  const timeline = wixAnimations.timeline();
+  let refsSetCounter = 0;
+  const refsArray = animationOptionsArray.map(() => null);
 
-    const applyAnimationSettings = () => {
-        if (refsSetCounter < animationOptionsArray.length) {
-            return;
-        }
+  const applyAnimationSettings = () => {
+    if (refsSetCounter < animationOptionsArray.length) {
+      return;
+    }
 
-        animationOptionsArray.forEach((animationOptions, idx) => {
-            timeline.add(refsArray[idx], animationOptions);
-        });
-    };
-
-    return {
-        timeline,
-        setRefs: animationOptionsArray.map((_, idx) => (el) => {
-            if (!refsArray[idx] && el) {
-                refsSetCounter++;
-                refsArray[idx] = el;
-                applyAnimationSettings();
-            }
-        })
-    };
+    animationOptionsArray.forEach((animationOptions, idx) => {
+      timeline.add(refsArray[idx], animationOptions);
+    });
+  };
+  
+  return {
+    timeline,
+    setRefs: animationOptionsArray.map((_, idx) => (el) => {
+      if (!refsArray[idx] && el) {
+        refsSetCounter++;
+        refsArray[idx] = el;
+        applyAnimationSettings();
+      }
+    })
+  };
 }
 // ...
 // Usage:
 const animation = createAnimation([
-    {scale: 0.8, duration: 200},
-    {opacity: 1, duration: 100},
-    {opacity: 0, duration: 10},
+  {scale: 0.8, duration: 200},
+  {opacity: 1, duration: 100},
+  {opacity: 0, duration: 10},
 ]);
 const onMouseIn = () => animation.timeline.play();
 const onMouseOut = () => animation.timeline.reverse();
 /// ...
-return (<W.container1 onClick={onClick}>
-       <W.mainColor
-            ref={animation.setRefs[0]} 
-            style={{backgroundColor: props.color}} 
-            onMouseIn={onMouseIn} 
-            onMouseOut={onMouseOut}>
-        </W.mainColor>
-        <W.blackBorder ref={animation.setRefs[1]} />
-        <W.emptyBorder ref={animation.setRefs[2]} />
-</W.container1>);
+return (
+  <W.container1 onClick={onClick}>
+    <W.mainColor
+      ref={animation.setRefs[0]} 
+      style={{backgroundColor: props.color}} 
+      onMouseIn={onMouseIn} 
+      onMouseOut={onMouseOut}>
+    </W.mainColor>
+    <W.blackBorder ref={animation.setRefs[1]} />
+    <W.emptyBorder ref={animation.setRefs[2]} />
+  </W.container1>
+);
 ```
