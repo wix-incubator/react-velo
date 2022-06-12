@@ -1,6 +1,6 @@
 import type ReactType from 'react';
 import { getGlobal } from './utils';
-
+import {ConcurrentRoot} from 'react-reconciler/constants'
 declare var self: any;
 let ReactInstance: typeof ReactType | null = null;
 
@@ -18,11 +18,13 @@ export function render(
   const reconciler = require('./reconciler').default;
   // @see https://github.com/facebook/react/blob/993ca533b42756811731f6b7791ae06a35ee6b4d/packages/react-reconciler/src/ReactRootTags.js
   // I think we are a legacy root?
-  const container = reconciler.createContainer(
-    { id: '~root~', type: 'root-container', $w, lastInstanceId: 0, instancesMap: new Map<string, any>(), children: [] },
-    0,
+  const rootContainer = { id: '~root~', type: 'root-container', $w, lastInstanceId: 0, instancesMap: new Map<string, any>(), children: [] };
+  const root = reconciler.createContainer(
+    rootContainer,
+    ConcurrentRoot,
     false,
     null,
+    true,
   );
 
   // Rule thinks we are in a React component, but we’re in a context that
@@ -39,7 +41,7 @@ export function render(
   reconciler.updateContainer(
       ReactInstance!.createElement(RenderContext.Provider, { value: renderContextValue },
           ReactInstance!.createElement(Component, null)),
-    container,
+    root,
     null,
     callback as any,
   );
@@ -53,16 +55,16 @@ const RepeaterWrapper = (props: any) => {
   return ReactInstance!.createElement('repeater', {
     id: props.id,
     onReadyItemId: (itemId: any, repeaterContext: any) => {
-      setReady({ 
-        ...ready,
+      setReady(prevReady => ({ 
+        ...prevReady,
         [itemId]: repeaterContext
-      });
+      }));
     },
     onRemovedItemId: (itemId: any) => {
-      setReady({ 
-        ...ready,
+      setReady(prevReady => ({ 
+        ...prevReady,
         [itemId]: undefined,
-      });
+      }));
     },
     data: props.data,
   }, props.data.map((item: {_id: string}) => {

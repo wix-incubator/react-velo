@@ -1,6 +1,9 @@
 import reactReconciler from 'react-reconciler';
 import { safeJsonStringify, getGlobal } from './utils';
 import { ReactVeloReconcilerInstance } from './reconciler-instance';
+import {
+  DefaultEventPriority,
+} from 'react-reconciler/constants';
 
 const rootHostContext = {
   type: 'root-host-context',
@@ -53,7 +56,10 @@ unknown,
 // timeout handle
 unknown,
 // notimeout
-unknown>;
+unknown> & {
+  getCurrentEventPriority: Function
+  detachDeletedInstance: Function
+};
 
 const ExpandCollapseVisibilityStrategy = {
   SHOW: 'expand',
@@ -72,12 +78,18 @@ export const reconcilerDefinition: ReconcilerDefinition = {
   // @see https://github.com/facebook/react/blob/master/packages/react-dom/src/client/ReactDOMHostConfig.js#L408
   // queueMicrotask: (callback: any): any =>
   //   Promise.resolve(null).then(callback).catch(handleErrorInNextTick),
+  getCurrentEventPriority() {
+    return DefaultEventPriority;
+  },
+
+  detachDeletedInstance(instance: any) {
+    log(`detachDeletedInstance called ${instance.instanceId}`);
+  },
 
   isPrimaryRenderer: true,
   supportsMutation: true,
   supportsHydration: false,
   supportsPersistence: false,
-
   // Context
   getRootHostContext(rootContainer: any) : any {
     log(`getRootHostContext()`);
@@ -240,11 +252,11 @@ export const reconcilerDefinition: ReconcilerDefinition = {
           log(`Should set text of ${instance.getIdentifier()}: ${payload[key]}, but we dont support that yet`);
         } else if (key === 'children') {
           log(`Should se children of ${instance.getIdentifier()}: ${payload[key]}, but we dont support that yet`);
-        } if (instance.getEventHandlerNames().includes(key) && type !== 'repeater') {
+        } else if (instance.getEventHandlerNames().includes(key) && type !== 'repeater') {
           log(`Modifying ${key} on #${instance.getIdentifier()} ${type} via removeEventHandler because it's an event handler.`);
           nativeEl.removeEventHandler(key, oldProps[key]);
           nativeEl[key](payload[key]);
-        } else  {
+        } else {
           log(`Set value of #${instance.getIdentifier()}: key "${key}" to "${safeJsonStringify(payload[key])}"`);
 
           if (key === 'hidden') {

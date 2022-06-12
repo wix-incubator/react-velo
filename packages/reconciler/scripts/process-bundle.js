@@ -5,7 +5,7 @@ const fs = require('fs').promises;
 const path = require('path');
 
 function getRequireFunctionName(source) {
-    const regex = /var ([a-zA-Z0-9]+)=\([a-z]=>typeof require!="undefined"\?require:typeof Proxy!="undefined"\?new Proxy/;
+    const regex = /var ([_a-zA-Z0-9]+)=\([a-z]=>typeof require!="undefined"\?require:typeof Proxy!="undefined"\?new Proxy/;
     const match = regex.exec(source);
     if (!match || match.length < 2) {
         return undefined;

@@ -14,6 +14,9 @@ interface ReactVeloReconcilerInstanceProps {
 
 
 function getEventHandlerNames(wElement: any) {
+  if (!wElement) {
+    return [];
+  }
   const keys = Object.keys(wElement);
   const eventHandlers = keys.filter(key => key.startsWith('on'));
   return eventHandlers;

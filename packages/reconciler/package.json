@@ -17,7 +17,7 @@
     "author": "Yury Michurin <yurym@wix.com>",
     "license": "MIT",
     "dependencies": {
-        "react-reconciler": "^0.26.2"
+        "react-reconciler": "^0.28.0"
     },
     "devDependencies": {
         "@babel/core": "^7.16.5",
@@ -35,7 +35,7 @@
         "http-server": "^14.0.0",
         "jest": "^27.4.5",
         "puppeteer": "^13.0.1",
-        "react": "^17.0.2",
+        "react": "^18.1.0",
         "typescript": "^4.5.2"
     },
     "wix": {
