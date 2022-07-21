@@ -59,7 +59,7 @@ In order to provide a React component API, React Velo creates a specialized reac
 Given A following page with a repeater
 ![repeater-example.png](docs/assets/repeater-example.png)
 
-It's React implementation can be controlled using the following code
+Its React implementation can be controlled using the following code
 ```javascript
 import React, { useState } from 'react';
 import { render, W } from '@wix/react-velo';
