@@ -83,10 +83,7 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
             this._nativeEl = nativeEl;
             this._applyNativeElPatch(this._nativeEl);
         } else {
-            console.log(
-                `Warning: no nativeEl for #${identifier} of type ${this.type} props id: ${this.props.id} on instanceId: ${this.instanceId}`,
-                nativeEl,
-              );
+            this._log(`Warning: no nativeEl for #${identifier} of type ${this.type} props id: ${this.props.id} on instanceId: ${this.instanceId}`);
         }
 
         return this._nativeEl;
@@ -102,10 +99,10 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
           nativeEl[inverseAction]();
           nativeEl[action]();
         } else {
-          console.log(`Warning: ${action}() is not defined for #${identifier} ${typeof this.props.id}}`);
+          this._log(`Warning: ${action}() is not defined for #${identifier} ${typeof this.props.id}}`);
         }
       } else {
-        console.log(`Warning: ${action}() cannot be performed - element with id ${identifier} was not found`);
+        this._log(`Warning: ${action}() cannot be performed - element with id ${identifier} was not found`);
       }
     }
 

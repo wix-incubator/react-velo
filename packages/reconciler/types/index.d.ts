@@ -78,7 +78,7 @@ declare namespace JSX {
 
 declare module '@wix/react-velo' {
     export function render(
-        rootElement: JSX.Element,
+        rootElement: any,
         $w: Function,
         react: any,
         callback?: Function

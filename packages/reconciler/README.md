@@ -9,11 +9,11 @@ This module is aimed to be used in Wix Velo environment.
 3. Add `@wix/react-velo` npm module
 4. Add `react` npm module
 
-![velo-sources-panel.png](docs/assets/velo-sources-panel.png)
+![velo-sources-panel.png](https://static.wixstatic.com/media/85a3c2_34235a5effbf40339d1e39823b3bb99f~mv2.png)
 
 ## Usage Example
 Given a site with the following elements (and their Velo IDs),
-![simple-example.png](docs/assets/simple-example.png)
+![simple-example.png](https://static.wixstatic.com/media/85a3c2_39bb6241db6a4c8eb72c3c10a4d171d6~mv2.png)
 
 A Velo User can control these elements the behavior, style and content using the following React Velo code<br>
 
@@ -57,7 +57,7 @@ A [Repeater](https://www.wix.com/velo/reference/$w/repeater) is a special Wix Ed
 In order to provide a React component API, React Velo creates a specialized react component which allows controlling the rendering of each item using a `renderItem` prop, as seen in the following example:
 
 Given A following page with a repeater
-![repeater-example.png](docs/assets/repeater-example.png)
+![repeater-example.png](https://static.wixstatic.com/media/85a3c2_a519d4160fb847c3b00ad3c0ae10b38d~mv2.png)
 
 Its React implementation can be controlled using the following code
 ```javascript
