@@ -2,7 +2,7 @@
     "name": "react-velo-mono-repo",
     "repository": {
         "type": "git",
-        "url": "git@github.com:wix-private/react-velo.git"
+        "url": "https://github.com/wix-incubator/react-velop"
     },
     "workspaces": {
         "packages": [

@@ -5,6 +5,10 @@
     "main": "./dist/react-velo.cjs.js",
     "module": "./dist/react-velo.esm.js",
     "types": "types/index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/wix-incubator/react-velo/tree/master/packages/reconciler"
+    },
     "scripts": {
         "build": "tsc && yarn build-bundle && yarn build-bundle:esm && yarn build-bundle:cjs",
         "build-bundle": "esbuild src/render.tsx --bundle --minify --target=es2020 --platform=browser --global-name=reactVelo --external:react --outfile=./dist/react-velo-bundle.js && node scripts/process-bundle.js react-velo-bundle.js",
