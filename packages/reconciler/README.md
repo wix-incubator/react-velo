@@ -199,3 +199,38 @@ return (
   </W.container1>
 );
 ```
+
+
+##### Widget interaction (Blocks)
+You can use `$widget.props` and `$widget.onPropsChanged(...)` to get props for your widget, like so:
+```javascript
+// Your component
+function App() {
+  const [items, setItems] = useState($widget.props.items);
+  useEffect(() => {
+    $widget.onPropsChanged((_, newProps) => {
+      setItems(newProps.items);
+     });
+  }, []);
+}
+
+```
+
+or create a HoC that will abstract that away, for example like that:
+
+```
+const withWidgetProps = (Component) => {
+ const [props, setProps] = useState($widget.props);
+ useEffect(() => {
+    $widget.onPropsChanged((_, newProps) => {
+      setProps({...newProps});
+     });
+ }, []); // we want to subscribe to props changed only once
+ 
+ return <Component ...props />;
+};
+
+// ... and later:
+
+$w.onReady(() => withWidgetProps(App));
+```
