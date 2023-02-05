@@ -211,26 +211,27 @@ function App() {
     $widget.onPropsChanged((_, newProps) => {
       setItems(newProps.items);
      });
-  }, []);
+  }, []); // we want to subscribe to props changed only once
 }
 
 ```
 
 or create a HoC that will abstract that away, for example like that:
 
-```
-const withWidgetProps = (Component) => {
- const [props, setProps] = useState($widget.props);
- useEffect(() => {
-    $widget.onPropsChanged((_, newProps) => {
-      setProps({...newProps});
-     });
- }, []); // we want to subscribe to props changed only once
- 
- return <Component ...props />;
+```javascript
+import React from 'react';
+import { render } from '@wix/react-velo';
+
+const withWidgetProps = (ReactInstance, Component) => {
+ const [props, setProps] = ReactInstance.useState($widget.props);
+ ReactInstance.useEffect(
+  () => $widget.onPropsChanged((_, newProps) => setProps({ ...newProps })),
+  []
+ );
+
+ return <Component {...props} />;
 };
 
 // ... and later:
-
-$w.onReady(() => withWidgetProps(App));
+$w.onReady(() => render(withWidgetProps(React, App), $w, React));
 ```
