@@ -199,3 +199,39 @@ return (
   </W.container1>
 );
 ```
+
+
+##### Widget interaction (Blocks)
+You can use `$widget.props` and `$widget.onPropsChanged(...)` to get props for your widget, like so:
+```javascript
+// Your component
+function App() {
+  const [items, setItems] = useState($widget.props.items);
+  useEffect(() => {
+    $widget.onPropsChanged((_, newProps) => {
+      setItems(newProps.items);
+     });
+  }, []); // we want to subscribe to props changed only once
+}
+
+```
+
+or create a HoC that will abstract that away, for example like that:
+
+```javascript
+import React from 'react';
+import { render } from '@wix/react-velo';
+
+const withWidgetProps = (ReactInstance, Component) => {
+ const [props, setProps] = ReactInstance.useState($widget.props);
+ ReactInstance.useEffect(
+  () => $widget.onPropsChanged((_, newProps) => setProps({ ...newProps })),
+  []
+ );
+
+ return <Component {...props} />;
+};
+
+// ... and later:
+$w.onReady(() => render(withWidgetProps(React, App), $w, React));
+```
