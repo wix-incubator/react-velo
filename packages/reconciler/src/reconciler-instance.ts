@@ -46,7 +46,7 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
     relative$w: any;
     parent: ReactVeloReconcilerInstance | null;
 
-    private _ignoreEvents: boolean = false;
+    private _eventHandlersRemovers : Map<Function, Function>;
     private _nativeEl: any = null;
     private _log: (st: string) => void;
 
@@ -60,6 +60,7 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
         this.children = props.children;
         this.parent = props.parent;
         this._log = log;
+        this._eventHandlersRemovers = new Map<Function, Function>();
     }
 
     _applyNativeElPatch(nativeEl: any) {
@@ -125,14 +126,26 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
 
     installEventHandlers() {
         this.applyOnExistingEvents((eventName, nativeElToInstallOn) => {
-          nativeElToInstallOn[eventName](this.props[eventName]);
+          const eventHandlerRemover = nativeElToInstallOn[eventName](this.props[eventName]);
+          if (typeof eventHandlerRemover === 'function') {
+            this._eventHandlersRemovers.set(this.props[eventName] as Function, eventHandlerRemover);
+          }
         });
     }
 
     removeEventHandlers() {
         this.applyOnExistingEvents((eventName, nativeElToRemoveFrom) => {
           nativeElToRemoveFrom.removeEventHandler(eventName, this.props[eventName]);
+          this.removeEventHandlerByHandlerInstance(this.props[eventName] as (...args: any) => any);
         });
+    }
+
+    removeEventHandlerByHandlerInstance(handler: (...args: any) => any) {
+      if (this._eventHandlersRemovers.has(handler)) {
+        const remover = this._eventHandlersRemovers.get(handler)!;
+        remover();
+        this._eventHandlersRemovers.delete(handler);
+      }
     }
 
     applyPropsOnNativeEl() {
