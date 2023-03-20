@@ -125,22 +125,35 @@ export class ReactVeloReconcilerInstance implements ReactVeloReconcilerInstanceP
     }
 
     installEventHandlers() {
-        this.applyOnExistingEvents((eventName, nativeElToInstallOn) => {
-          const eventHandlerRemover = nativeElToInstallOn[eventName](this.props[eventName]);
-          if (typeof eventHandlerRemover === 'function') {
-            this._eventHandlersRemovers.set(this.props[eventName] as Function, eventHandlerRemover);
-          }
+        this.applyOnExistingEvents((eventName) => {
+          this._addEventHandlerInstance(eventName, this.props[eventName] as (...args: any) => any);
         });
     }
 
     removeEventHandlers() {
         this.applyOnExistingEvents((eventName, nativeElToRemoveFrom) => {
           nativeElToRemoveFrom.removeEventHandler(eventName, this.props[eventName]);
-          this.removeEventHandlerByHandlerInstance(this.props[eventName] as (...args: any) => any);
+          this._removeEventHandlerByHandlerInstance(this.props[eventName] as (...args: any) => any);
         });
     }
 
-    removeEventHandlerByHandlerInstance(handler: (...args: any) => any) {
+    _addEventHandlerInstance(eventName: string, eventHandler: (...args: any) => any) {
+      const eventHandlerRemover = this.getNativeEl()[eventName](eventHandler);
+      if (typeof eventHandlerRemover === 'function') {
+        this._eventHandlersRemovers.set(eventHandler, eventHandlerRemover);
+      }
+    }
+
+    upsertEventHandler(eventName: string, newEventHandler: (...args: any) => any, oldEventHandler?: (...args: any) => any) {
+      if (oldEventHandler) {
+        this.getNativeEl().removeEventHandler(eventName, oldEventHandler);
+        this._removeEventHandlerByHandlerInstance(oldEventHandler);
+      }
+
+      this._addEventHandlerInstance(eventName, newEventHandler);
+    }
+
+    _removeEventHandlerByHandlerInstance(handler: (...args: any) => any) {
       if (this._eventHandlersRemovers.has(handler)) {
         const remover = this._eventHandlersRemovers.get(handler)!;
         remover();
