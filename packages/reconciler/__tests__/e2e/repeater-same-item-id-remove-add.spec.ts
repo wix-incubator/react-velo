@@ -19,7 +19,7 @@ describe('sanity for repeater with the same item id', () => {
         const noteButton = await page.$('button[aria-label=Note]');
 
         if (!noteButton) {
-            throw new Error(`Unable to find star button`);
+            throw new Error(`Unable to find note button`);
         }
         
         await noteButton.click();

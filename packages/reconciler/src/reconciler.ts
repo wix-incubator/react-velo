@@ -254,9 +254,11 @@ export const reconcilerDefinition: ReconcilerDefinition = {
           log(`Should se children of ${instance.getIdentifier()}: ${payload[key]}, but we dont support that yet`);
         } else if (instance.getEventHandlerNames().includes(key) && type !== 'repeater') {
           log(`Modifying ${key} on #${instance.getIdentifier()} ${type} via removeEventHandler because it's an event handler.`);
-          nativeEl.removeEventHandler(key, oldProps[key]);
-          instance.removeEventHandlerByHandlerInstance(oldProps[key] as (...args: any) => any);
-          nativeEl[key](payload[key]);
+          instance.upsertEventHandler(
+            key,
+            payload[key] as (...args: any) => any,
+            oldProps[key] as (...args: any) => any
+          );
         } else {
           log(`Set value of #${instance.getIdentifier()}: key "${key}" to "${safeJsonStringify(payload[key])}"`);
 
