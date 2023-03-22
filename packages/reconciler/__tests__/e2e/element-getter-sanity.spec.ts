@@ -1,18 +1,7 @@
 import puppeteer from 'puppeteer';
 import { getPageAtUrl } from './browser-utils';
 
-const sleep = async (seconds: number) => await new Promise(resolve => setTimeout(resolve, seconds * 1000));
-
-async function clickButtonMultipleTimes(button:  puppeteer.ElementHandle<Element> , times: number) {
-    let clicksTodo = times;
-    do {
-        await button.click();
-        await sleep(1);
-        clicksTodo--;
-    } while(clicksTodo > 0);
-}
-
-describe('widget event handlers sanity', () => {
+describe('getter setter sanity', () => {
     let browser: puppeteer.Browser;
     beforeAll(async () => {
         browser = await puppeteer.launch({
@@ -21,7 +10,7 @@ describe('widget event handlers sanity', () => {
         });
     }, 30000);
 
-    it('should call event handler only once', async () => {
+    it('radioGroup getter shouldnt interfere with setting the property', async () => {
         const waitForTextToBe = (value: string) => {
             const valueOnPage = Array.from(document.querySelectorAll('[data-testid="richTextElement"]'))
             .map(el => (el as HTMLElement).innerText).join('').trim();
