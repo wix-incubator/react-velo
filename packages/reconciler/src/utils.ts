@@ -32,7 +32,7 @@ const getCircularReplacer = () => {
           typeof props[key] === 'object'
         ) {
           try {
-            Object.assign(obj[key], props[key]);
+            Object.assign(obj, {[key]: props[key]});
           } catch (ex) {
             console.log(
               `applyPropsOnObjectExcept Object.assign setting ${key} failed: ${(ex as Error).message}`,
