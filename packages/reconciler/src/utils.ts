@@ -29,7 +29,8 @@ const getCircularReplacer = () => {
         if (
           obj[key] &&
           typeof obj[key] === 'object' &&
-          typeof props[key] === 'object'
+          typeof props[key] === 'object' &&
+          !Array.isArray(props[key])
         ) {
           try {
             Object.assign(obj, {
