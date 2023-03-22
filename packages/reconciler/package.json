@@ -1,6 +1,6 @@
 {
     "name": "@wix/react-velo",
-    "version": "1.0.50",
+    "version": "1.0.51",
     "description": "",
     "main": "./dist/react-velo.cjs.js",
     "module": "./dist/react-velo.esm.js",
